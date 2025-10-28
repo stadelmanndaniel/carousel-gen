@@ -1,0 +1,61 @@
+{
+    "global_request": "Given the following concept: {prompt}, generate the content for an Instagram carousel. There will be two slides, with the following instruction for each slides.",
+    "carousel_items": [
+        {
+            "layout": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "x": 50,
+                    "y": 50,
+                    "width": 600,
+                    "height": 100,
+                    "font": "Arial",
+                    "fontSize": 36,
+                    "fill": "#000000"
+                },
+                {
+                    "id": "image",
+                    "type": "image",
+                    "x": 50,
+                    "y": 200,
+                    "width": 600,
+                    "height": 300
+                }
+            ],
+            "requests": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "instruction": "Make an educational title."
+                },
+                {
+                    "id": "image",
+                    "type": "image",
+                    "instruction": "Create an engaging image that illustrates the educational content."
+                }
+            ]
+        },
+
+        {
+            "layout": [
+                {
+                    "id": "image",
+                    "type": "image",
+                    "x": 50,
+                    "y": 200,
+                    "width": 600,
+                    "height": 300
+                }
+            ],
+            "requests": [
+                {
+                    "id": "image",
+                    "type": "image",
+                    "instruction": "Create an engaging image that illustrates the educational content."
+                }
+            ]
+        }
+
+    ]
+}

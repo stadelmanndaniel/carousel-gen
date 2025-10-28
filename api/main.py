@@ -1,19 +1,16 @@
 import os
+import re
+import base64
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List, Literal, Optional, Any, Dict 
 from google import genai
 from google.genai import types
-import re
-import base64 # <-- NEW IMPORT
 
 # --- Initialization ---
-# IMPORTANT: You must provide your Google AI API Key.
-# For Vercel, set this as a secret environment variable (e.g., GEMINI_API_KEY).
-# For local development, set it in your shell or .env file.
 try:
     # Initialize client, which requires the API key to be set
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-    # Check if the API key is actually set, as image models often fail silently otherwise
     if not os.environ.get("GEMINI_API_KEY"):
          raise ConnectionError("GEMINI_API_KEY environment variable is not set.")
 except Exception as e:
@@ -22,26 +19,45 @@ except Exception as e:
 
 app = FastAPI()
 
-# 1. Define the input structure using Pydantic
+# --- Pydantic Models for Structured Input ---
+
+# LayoutItem class has been removed as it is no longer part of the API input structure.
+
+# ContentRequest is updated to include the optional aspect_ratio for images
+class ContentRequest(BaseModel):
+    id: str
+    type: Literal["text", "image"]
+    instruction: str
+    aspect_ratio: Optional[str] = "16:9" # Default aspect ratio for images
+
+class RequestInput(BaseModel):
+    local_context: Optional[str] = None
+    content: List[ContentRequest]
+
 class PromptInput(BaseModel):
-    # The input text, which will be the description of the carousel
-    ad_prompt: str
-    aspect_ratio: str = "16:9"  # Default aspect ratio
+    # The core concept of the carousel 
+    prompt: str
+    # The overall instruction template 
+    global_request: str
+    
+    # The decoupled array of slides, where each item is a list of content requests for that slide.
+    requests: List[RequestInput]
+
 
 # 2. Function to generate image based on description
 def generate_image(image_description: str, aspect_ratio: str = "16:9") -> str | None:
     """
-    Generates an image based on the provided description using gemini-2.5-flash-image
-    and returns the Base64 encoded image string.
+    Generates an image based on the provided description and returns the 
+    Base64 encoded image string.
     """
     if not client:
         raise ConnectionError("AI Client not initialized or API Key missing.")
 
     try:
-        print(f"Generating ad image with description: '{image_description[:50]}...'")
+        print(f"Generating image with prompt: '{image_description}...' (Ratio: {aspect_ratio})")
         
         response = client.models.generate_content(
-            model="gemini-2.5-flash-image-preview", # Using the image generation flash model
+            model="gemini-2.5-flash-image-preview", 
             contents=[image_description],
             config=types.GenerateContentConfig(
                 image_config=types.ImageConfig(
@@ -51,110 +67,114 @@ def generate_image(image_description: str, aspect_ratio: str = "16:9") -> str | 
         )
 
         for part in response.candidates[0].content.parts:
-            # The Base64 data is inside the inline_data field
             if part.inline_data is not None and part.inline_data.data:
-                
                 raw_image_data = part.inline_data.data
                 
-                # --- CORRECTED FIX: Explicitly encode binary data to Base64 string ---
-                # If the SDK returns raw binary bytes (a common behavior), we must:
-                # 1. Base64 encode the bytes (base64.b64encode)
-                # 2. Decode the resulting Base64 bytes to a standard UTF-8 string (decode('utf-8'))
+                # Base64 encode the raw binary data and decode to a string for JSON serialization
                 if isinstance(raw_image_data, bytes):
                     encoded_bytes = base64.b64encode(raw_image_data)
                     return encoded_bytes.decode('utf-8') 
                 
-                # If it's already a string (str), return it directly.
                 return raw_image_data
         
         print("No image data found in the response.")
         return None
 
     except Exception as e:
-        print(f"Error generating ad image: {e}")
-        # Re-raise as a distinct exception type for clearer handling in the main route
+        print(f"Error generating image: {e}")
         raise RuntimeError(f"Image generation failed: {e}")
 
-
-# 3. Function to interact with the Gemini API (Your core text logic)
-def generate_carousel_content(ad_prompt: str):
+# 3. Function to generate a single piece of text content
+def generate_text_content(text_generation_prompt) -> str:
     """
-    Generates an image description, title, and subtitle using a text-based 
-    GenAI model based on a user's ad prompt.
+    Generates a single, specific text string based on the full context and a specific instruction.
     """
     if not client:
         raise ConnectionError("AI Client not initialized or API Key missing.")
 
     try:
-        text_generation_prompt = f"""
-        Given the following ad concept: "{ad_prompt}"
-
-        Please generate:
-        1. An evocative, detailed image description suitable for a text-to-image model. Focus on composition, lighting, and mood.
-        2. A catchy, concise title for an Instagram carousel post (10 words max).
-        3. A descriptive, engaging subtitle for Instagram carousel post (20 words max).
-
-        Format your response strictly as follows, ensuring the title and subtitle are contained on single lines:
-
-        IMAGE_DESCRIPTION: [Your detailed image description here]
-        TITLE: [Your ad title here]
-        SUBTITLE: [Your ad subtitle here]
-        """
-
-        print(f"Generating ad text and image description for prompt: {ad_prompt[:30]}...")
-        
+        # Combine the global context with the specific instruction
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[text_generation_prompt]
         )
 
-        # Extract content using regex
-        text_output = response.candidates[0].content.parts[0].text
-        
-        img_desc_match = re.search(r"IMAGE_DESCRIPTION:\s*(.*)", text_output)
-        title_match = re.search(r"TITLE:\s*(.*)", text_output)
-        subtitle_match = re.search(r"SUBTITLE:\s*(.*)", text_output)
-
-        image_description = img_desc_match.group(1).strip() if img_desc_match else f"A vibrant ad for {ad_prompt.lower()}"
-        title = title_match.group(1).strip() if title_match else f"Content for: {ad_prompt.split(' for ')[-1].title()}"
-        subtitle = subtitle_match.group(1).strip() if subtitle_match else "Experience the best of our product!"
-
-        return {
-            "image_description": image_description, 
-            "title": title, 
-            "subtitle": subtitle
-        }
+        # Simply return the raw text output, stripped of whitespace
+        return response.candidates[0].content.parts[0].text
 
     except Exception as e:
         print(f"Error generating text content: {e}")
-        # Raise an exception for the FastAPI handler to catch
         raise Exception(f"AI content generation failed: {e}")
 
 
+
 # 4. Define the main API endpoint
-@app.post("/api/generate_content")
+# The response returns content indexed by slide, without the layout information.
+@app.post("/api/generate_content", response_model=List[Dict[str, Any]])
 async def handle_content_generation(input_data: PromptInput):
     """
-    Accepts an ad prompt, generates structured content and an image, and returns both.
-    The image is returned as a Base64 string.
+    Accepts a structured carousel input, iterates through slides and content requests,
+    generates content (text and images), and returns the results decoupled from layout.
     """
     try:
-        # Step 1: Generate text content and get the image description
-        content = generate_carousel_content(input_data.ad_prompt)
-        
-        # Step 2: Generate the image using the description from Step 1
-        base64_image = generate_image(content["image_description"], aspect_ratio=input_data.aspect_ratio)
-        
-        # Step 3: Combine all results
-        response_data = {
-            "title": content["title"],
-            "subtitle": content["subtitle"],
-            "image_description": content["image_description"],
-            # Return the Base64 image data
-            "base64_image": base64_image
-        }
-        
-        return response_data
+        # Step 1: Prepare the global LLM prompt by substituting the user's prompt
+
+        full_llm_prompt = input_data.global_request.replace("{prompt}", input_data.prompt)
+        full_llm_prompt += "\n\n"
+        for slide_index, slide_requests in enumerate(input_data.requests):
+            full_llm_prompt += f"--- Slide {slide_index + 1} Requests ---\n"
+            if slide_requests.local_context:
+                full_llm_prompt += f"Context: {slide_requests.local_context}\n"
+            else:
+                full_llm_prompt += "Generate the content for a slide that adheres to the global theme\n"
+            
+            local_instructions = ""
+            local_formatting = ""
+            for request_index, request in enumerate(slide_requests.content):
+                local_instructions += f"{request_index + 1}. For element ID '{request.id}', {request.instruction}\n"
+                if request.type == "text":
+                    local_formatting += f"{request.id}: <generated text here>\n"
+                elif request.type == "image":
+                    local_formatting += f"{request.id}: <generated image description>\n"
+
+            full_llm_prompt += "\nPlease generate:\n"
+            full_llm_prompt += local_instructions
+            full_llm_prompt += "\nFormat your answer strictly as follows, ensuring each instruction are contained on a single line:\n"
+            full_llm_prompt += local_formatting
+            full_llm_prompt += "\n\n"
+
+        print("Full LLM Prompt prepared:")
+        print(full_llm_prompt)
+
+        LLM_response = generate_text_content(full_llm_prompt)
+        print("LLM Response received:")
+        print(LLM_response)
+
+        final_response = []
+
+        for slide_index, slide_requests in enumerate(input_data.requests):
+            local_final_response = dict()
+            print(f"\n--- Processing Slide {slide_index + 1} ---")
+            for request_index, request in enumerate(slide_requests.content):
+                print(request_index)
+                if request.type == "text":
+                    # Extract the generated text for this element from the LLM response
+                    pattern = rf"{request.id}:\s*(.*)"
+                    match = re.search(pattern, LLM_response)
+                    generated_text = match.group(1).strip() if match else "Text generation failed."
+                    local_final_response[request.id] = generated_text
+                elif request.type == "image":
+                    # Extract the image description for this element from the LLM response
+                    pattern = rf"{request.id}:\s*(.*)"
+                    match = re.search(pattern, LLM_response)
+                    image_description_prompt = match.group(1).strip() if match else "A vibrant image for the carousel slide following the content theme: {prompt}".replace("{prompt}", input_data.prompt)
+                        
+                    base64_image = generate_image(image_description_prompt, aspect_ratio=request.aspect_ratio)
+                    local_final_response[request.id] = base64_image
+            final_response.append(local_final_response)
+
+            
+        return final_response
         
     except ConnectionError as e:
         raise HTTPException(
@@ -162,13 +182,11 @@ async def handle_content_generation(input_data: PromptInput):
             detail="AI Service Unavailable: API Key missing or client initialization failed."
         )
     except RuntimeError as e:
-         # Catch errors specifically from the image generation step
          raise HTTPException(
             status_code=500,
             detail=f"Image Generation Error: {e}"
         )
     except Exception as e:
-        # Catch errors from the text generation step
         raise HTTPException(
             status_code=500,
             detail=f"Content Generation Error: {e}"
