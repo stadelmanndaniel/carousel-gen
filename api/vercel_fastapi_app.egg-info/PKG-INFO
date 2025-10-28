@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: vercel-fastapi-app
+Version: 0.1.0
+Summary: A simple FastAPI serverless function.
+Requires-Python: >=3.9
+Requires-Dist: fastapi
+Requires-Dist: pydantic
+Requires-Dist: uvicorn
+Requires-Dist: google-genai
