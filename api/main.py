@@ -156,7 +156,6 @@ async def handle_content_generation(input_data: PromptInput):
             local_final_response = dict()
             print(f"\n--- Processing Slide {slide_index + 1} ---")
             for request_index, request in enumerate(slide_requests.content):
-                print(request_index)
                 if request.type == "text":
                     # Extract the generated text for this element from the LLM response
                     pattern = rf"{request.id}:\s*(.*)"

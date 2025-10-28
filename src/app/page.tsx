@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AuthModal from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import LandingPage from '@/components/LandingPage';
@@ -11,6 +12,7 @@ import CanvasEditor from '@/components/CanvasEditor';
 import ExportModal from '@/components/ExportModal';
 import { CarouselStyle, Carousel } from '@/types';
 
+
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<'landing' | 'style' | 'prompt' | 'preview' | 'edit' | 'export'>('landing');
   const [selectedStyle, setSelectedStyle] = useState<CarouselStyle | null>(null);
@@ -18,59 +20,46 @@ export default function Home() {
   const [generatedCarousel, setGeneratedCarousel] = useState<Carousel | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const pendingActionRef = useRef<null | { type: 'generate'; promptText: string }>(null);
-  const { user } = useAuth();
+  const { user, supabase } = useAuth();
+  const router = useRouter();
+
 
   const handleStyleSelect = (style: CarouselStyle) => {
     setSelectedStyle(style);
     setCurrentStep('prompt');
   };
 
-  const doMockGenerate = (promptText: string) => {
+  const doGenerate = async (promptText: string) => {
+
     setPrompt(promptText);
-    const mockCarousel: Carousel = {
-      id: 'mock-carousel',
-      title: 'Generated Carousel',
-      style: selectedStyle!,
-      slides: [
-        {
-          id: 'slide-1',
-          imageUrl: '/api/placeholder/400/400',
-          text: 'Welcome to our amazing product!',
-          position: 1,
-          backgroundColor: selectedStyle!.colors[0],
-          textColor: '#ffffff'
+    // setCurrentStep('preview'); // or show spinner
+    if (!user) {
+      // handle unauthenticated state (e.g., open AuthModal)
+      return;
+    }
+
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-        {
-          id: 'slide-2',
-          imageUrl: '/api/placeholder/400/400',
-          text: 'Here are the key features that make us special',
-          position: 2,
-          backgroundColor: selectedStyle!.colors[1],
-          textColor: '#ffffff'
-        },
-        {
-          id: 'slide-3',
-          imageUrl: '/api/placeholder/400/400',
-          text: 'See how our customers are loving it',
-          position: 3,
-          backgroundColor: selectedStyle!.colors[2],
-          textColor: '#ffffff'
-        },
-        {
-          id: 'slide-4',
-          imageUrl: '/api/placeholder/400/400',
-          text: 'Ready to get started? Click the link below!',
-          position: 4,
-          backgroundColor: selectedStyle!.colors[3],
-          textColor: '#ffffff'
-        }
-      ],
-      prompt: promptText,
-      createdAt: new Date()
-    };
-    setGeneratedCarousel(mockCarousel);
-    setCurrentStep('preview');
+        body: JSON.stringify({ prompt: promptText, style_id: "blue-three-slides-style"}),
+      });
+
+      if (!response.ok) throw new Error("Generation API failed");
+
+      const { project_id } = await response.json();
+
+      router.push(`/carousel?project_id=${project_id}`);
+    } catch (err: any) {
+      console.error(err);
+      alert("Generation failed: " + err.message);
+    }
   };
+
 
   const handlePromptSubmit = (promptText: string) => {
     if (!user) {
@@ -79,17 +68,17 @@ export default function Home() {
       setAuthOpen(true);
       return;
     }
-    doMockGenerate(promptText);
+    doGenerate(promptText);
   };
 
   useEffect(() => {
     if (user && pendingActionRef.current?.type === 'generate') {
       const saved = localStorage.getItem('pendingPrompt');
       if (saved) {
-        doMockGenerate(saved);
+        doGenerate(saved);
         localStorage.removeItem('pendingPrompt');
       } else {
-        doMockGenerate(pendingActionRef.current.promptText);
+        doGenerate(pendingActionRef.current.promptText);
       }
       pendingActionRef.current = null;
       setAuthOpen(false);
@@ -110,7 +99,7 @@ export default function Home() {
         return <PromptEditor onSubmit={handlePromptSubmit} onBack={() => setCurrentStep('style')} />;
       case 'preview':
         return (
-          <CarouselPreview 
+          <CarouselPreview
             carousel={generatedCarousel!} 
             onEdit={() => setCurrentStep('edit')}
             onExport={() => setCurrentStep('export')}
@@ -148,7 +137,7 @@ export default function Home() {
           if (pendingActionRef.current?.type === 'generate') {
             const saved = localStorage.getItem('pendingPrompt');
             if (saved) {
-              doMockGenerate(saved);
+              doGenerate(saved);
               localStorage.removeItem('pendingPrompt');
             }
             pendingActionRef.current = null;
