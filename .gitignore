@@ -36,3 +36,9 @@ yarn-error.log*
 next-env.d.ts
 
 env.local
+/api/build
+/api/.venv
+/api/vercel_fastapi_app.egg-info
+/api/__pycache__/
+/api/trash_scripts
+package-lock.json
