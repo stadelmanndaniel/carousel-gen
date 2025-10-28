@@ -8,6 +8,7 @@ dependencies = [
     "fastapi",
     "pydantic",
     "uvicorn",
+    "google-genai"
 ]
 
 [build-system]
