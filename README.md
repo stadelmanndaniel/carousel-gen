@@ -303,6 +303,59 @@ AWS_SECRET_ACCESS_KEY="..."
 JWT_SECRET="..."
 ```
 
+## Supabase Setup (Auth + Storage)
+
+1. Create `.env.local` in the project root with:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+2. In Supabase SQL Editor, run:
+```sql
+create extension if not exists pgcrypto;
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  full_name text,
+  logo_path text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.profiles enable row level security;
+
+drop policy if exists "Users can view own profile" on public.profiles;
+drop policy if exists "Users can update own profile" on public.profiles;
+
+create policy "Users can view own profile" on public.profiles
+  for select using (auth.uid() = id);
+create policy "Users can update own profile" on public.profiles
+  for update using (auth.uid() = id) with check (auth.uid() = id);
+
+select storage.create_bucket('logos', public := false);
+alter table storage.objects enable row level security;
+
+drop policy if exists "Logo read own" on storage.objects;
+drop policy if exists "Logo insert own" on storage.objects;
+drop policy if exists "Logo update own" on storage.objects;
+drop policy if exists "Logo delete own" on storage.objects;
+
+create policy "Logo read own" on storage.objects
+  for select using (bucket_id = 'logos' and owner = auth.uid());
+create policy "Logo insert own" on storage.objects
+  for insert with check (bucket_id = 'logos' and owner = auth.uid());
+create policy "Logo update own" on storage.objects
+  for update using (bucket_id = 'logos' and owner = auth.uid()) with check (bucket_id = 'logos' and owner = auth.uid());
+create policy "Logo delete own" on storage.objects
+  for delete using (bucket_id = 'logos' and owner = auth.uid());
+```
+
+3. Start dev server:
+```bash
+npm run dev
+```
+
 ## 📚 Additional Resources
 
 ### Documentation
