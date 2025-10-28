@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSupabase } from "@/lib/supabase/server";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -67,26 +66,55 @@ export async function POST(req: NextRequest) {
     // --- Supabase Storage ---
     const project_id = uuidv4();
     const folderPath = `${user_id}/${project_id}/`;
-
+    
     // a) Save style JSON
     await supabase.storage
       .from("carousels")
-      .upload(`${folderPath}style.json`, JSON.stringify(template), { contentType: "application/json" });
+      .upload(`${folderPath}style.json`, JSON.stringify(template), {
+        contentType: "application/json",
+      });
 
-    // b) Save result JSON
-    await supabase.storage
-      .from("carousels")
-      .upload(`${folderPath}result.json`, JSON.stringify(generatedData), { contentType: "application/json" });
+    // --- Prepare updated result ---
+    const updatedResult = [];
 
-    // c) Save images
+    // b) Process each slide: upload images & replace base64 with filenames
     for (const slide of generatedData) {
+      const updatedSlide: Record<string, any> = {};
+
       for (const [id, base64] of Object.entries(slide)) {
         if (typeof base64 === "string" && base64.startsWith("iVBOR")) {
-          const blob = await fetch(`data:image/png;base64,${base64}`).then((res) => res.blob());
-          await supabase.storage.from("carousels").upload(`${folderPath}${id}.png`, blob);
+          // Upload image
+          const imagePath = `${folderPath}${id}.png`;
+
+          // Convert base64 to binary buffer
+          const buffer = Buffer.from(base64, "base64");
+
+          const { error: uploadErr } = await supabase.storage
+            .from("carousels")
+            .upload(imagePath, buffer, { contentType: "image/png" });
+
+          if (uploadErr) {
+            console.error("Image upload failed:", uploadErr);
+            throw uploadErr;
+          }
+
+          // Replace base64 with file path in storage
+          updatedSlide[id] = id + ".png";
+        } else {
+          // Keep non-image fields as-is
+          updatedSlide[id] = base64;
         }
       }
+
+      updatedResult.push(updatedSlide);
     }
+
+    // c) Save result JSON (now referencing image paths instead of base64)
+    await supabase.storage
+      .from("carousels")
+      .upload(`${folderPath}result.json`, JSON.stringify(updatedResult, null, 2), {
+        contentType: "application/json",
+      });
 
     return NextResponse.json({ project_id });
 
