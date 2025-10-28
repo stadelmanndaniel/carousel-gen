@@ -12,28 +12,24 @@ interface StyleSelectorProps {
 export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorProps) {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">Choose Your Style</h1>
-          <div className="w-20"></div> {/* Spacer for centering */}
-        </div>
-      </header>
-
       {/* Content */}
       <main className="px-6 py-12">
         <div className="max-w-7xl mx-auto">
+          {/* Back Button */}
+          <div className="mb-8">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Home</span>
+            </button>
+          </div>
+
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Pick Your Carousel Style
-            </h2>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Choose Your Carousel Style
+            </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Choose from our curated collection of professional templates designed for different content types and audiences.
             </p>
@@ -52,10 +48,6 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
                     src={style.preview} 
                     alt={`${style.name} preview`}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails to load
-                      e.currentTarget.src = '/api/placeholder/300/400';
-                    }}
                   />
                 </div>
 
@@ -69,7 +61,7 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
                   </p>
                   
                   {/* Color Palette */}
-                  <div className="flex space-x-2 mb-4">
+                  <div className="flex space-x-2">
                     {style.colors.map((color, index) => (
                       <div
                         key={index}
@@ -77,13 +69,6 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
                         style={{ backgroundColor: color }}
                       />
                     ))}
-                  </div>
-
-                  {/* Category Badge */}
-                  <div className="inline-block">
-                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-                      {style.category}
-                    </span>
                   </div>
                 </div>
 

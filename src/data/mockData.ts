@@ -13,7 +13,7 @@ export const carouselStyles: CarouselStyle[] = [
     id: 'meme-style',
     name: 'Meme Style',
     description: 'Fun, viral-ready designs with bold colors and playful typography',
-    preview: '/api/placeholder/300/400',
+    preview: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=300&h=400&fit=crop&crop=center',
     category: 'meme',
     colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24']
   },
@@ -29,7 +29,7 @@ export const carouselStyles: CarouselStyle[] = [
     id: 'business',
     name: 'Business',
     description: 'Professional corporate style with clean lines and corporate colors',
-    preview: '/api/placeholder/300/400',
+    preview: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=300&h=400&fit=crop&crop=center',
     category: 'business',
     colors: ['#2c3e50', '#34495e', '#3498db', '#2980b9']
   },
@@ -37,7 +37,7 @@ export const carouselStyles: CarouselStyle[] = [
     id: 'lifestyle',
     name: 'Lifestyle',
     description: 'Modern, trendy designs perfect for lifestyle and personal brands',
-    preview: '/api/placeholder/300/400',
+    preview: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=300&h=400&fit=crop&crop=center',
     category: 'lifestyle',
     colors: ['#ff9a9e', '#fecfef', '#fecfef', '#ffecd2']
   }

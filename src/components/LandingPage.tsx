@@ -9,29 +9,14 @@ interface LandingPageProps {
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 gradient-instagram rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">CarouselGen</span>
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
-            <a href="#about" className="text-gray-600 hover:text-gray-900">About</a>
-          </nav>
-        </div>
-      </header>
+      {/* Header removed - consolidated into global navbar */}
 
       {/* Hero Section */}
       <section className="px-6 py-20">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
             Create Stunning
-            <span className="gradient-instagram bg-clip-text text-transparent"> Instagram Carousels</span>
+            <span className="text-gradient-instagram"> Instagram Carousels</span>
             <br />
             with AI
           </h1>
@@ -105,10 +90,64 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">Simple Pricing</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-2xl border bg-gray-50">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Free</h3>
+              <p className="text-4xl font-bold text-gray-900 mb-4">$0</p>
+              <ul className="text-gray-600 space-y-2 mb-6">
+                <li>Basic templates</li>
+                <li>Up to 3 exports</li>
+                <li>Community support</li>
+              </ul>
+              <button onClick={onGetStarted} className="w-full bg-white text-gray-900 border rounded-lg py-3 font-semibold">Get Started</button>
+            </div>
+            <div className="p-8 rounded-2xl border-2 border-purple-600 bg-white shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Pro</h3>
+              <p className="text-4xl font-bold text-gray-900 mb-1">$12</p>
+              <p className="text-sm text-gray-500 mb-4">per month</p>
+              <ul className="text-gray-600 space-y-2 mb-6">
+                <li>All styles</li>
+                <li>Unlimited exports</li>
+                <li>Priority support</li>
+              </ul>
+              <button onClick={onGetStarted} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg py-3 font-semibold">Start Pro</button>
+            </div>
+            <div className="p-8 rounded-2xl border bg-gray-50">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Team</h3>
+              <p className="text-4xl font-bold text-gray-900 mb-1">$29</p>
+              <p className="text-sm text-gray-500 mb-4">per month</p>
+              <ul className="text-gray-600 space-y-2 mb-6">
+                <li>Collaboration</li>
+                <li>Brand assets</li>
+                <li>Analytics</li>
+              </ul>
+              <button onClick={onGetStarted} className="w-full bg-white text-gray-900 border rounded-lg py-3 font-semibold">Contact Sales</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="px-6 py-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">Why Content Matters</h2>
+          <p className="text-lg text-gray-700 leading-8">
+            Consistent, valuable content is how you build trust, create conversations, and
+            stay top-of-mind with your audience. Whether youre educating your niche,
+            sharing insights, or telling stories, carousels make complex ideas easy to
+            digest. Great content sparks engagement, and engagement drives growth.
+          </p>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="px-6 py-8 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto text-center">
-          <p>&copy; 2024 CarouselGen. All rights reserved.</p>
+          <p>&copy; 2025 CarouselGen. All rights reserved.</p>
         </div>
       </footer>
     </div>

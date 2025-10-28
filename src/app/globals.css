@@ -15,3 +15,12 @@ body {
 .gradient-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
+
+/* Gradient text helper to avoid background "beams" artifacts */
+.text-gradient-instagram {
+  background: linear-gradient(45deg, #E4405F, #833AB4, #F77737, #FCAF45);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
