@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/api/build
+/api/.venv
+/api/vercel_fastapi_app.egg-info
+/api/__pycache__/
