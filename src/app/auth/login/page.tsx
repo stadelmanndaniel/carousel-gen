@@ -1,10 +1,10 @@
 "use client";
 
 import AuthModal from "@/components/AuthModal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginContent() {
   const [open, setOpen] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,6 +25,14 @@ export default function LoginPage() {
         }}
       />
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
 

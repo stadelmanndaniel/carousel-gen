@@ -11,9 +11,12 @@ let browserClient: ReturnType<typeof createClient> | null = null;
 export function getSupabaseClient() {
   if (!browserClient) {
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Supabase env vars missing: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY");
+      console.warn("Supabase env vars missing: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY");
+      // Return a mock client that won't crash the app
+      browserClient = createClient("https://placeholder.supabase.co", "placeholder-key");
+    } else {
+      browserClient = createClient(supabaseUrl, supabaseAnonKey);
     }
-    browserClient = createClient(supabaseUrl, supabaseAnonKey);
   }
   return browserClient;
 }

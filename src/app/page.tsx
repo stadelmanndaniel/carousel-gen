@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AuthModal from '@/components/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import LandingPage from '@/components/LandingPage';
@@ -11,7 +12,8 @@ import CanvasEditor from '@/components/CanvasEditor';
 import ExportModal from '@/components/ExportModal';
 import { CarouselStyle, Carousel } from '@/types';
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState<'landing' | 'style' | 'prompt' | 'preview' | 'edit' | 'export'>('landing');
   const [selectedStyle, setSelectedStyle] = useState<CarouselStyle | null>(null);
   const [prompt, setPrompt] = useState('');
@@ -20,12 +22,22 @@ export default function Home() {
   const pendingActionRef = useRef<null | { type: 'generate'; promptText: string }>(null);
   const { user } = useAuth();
 
+  console.log('HomeContent render - currentStep:', currentStep, 'user:', user);
+
+  // Check if login is required from URL params
+  useEffect(() => {
+    if (searchParams.get('login') === 'true') {
+      setAuthOpen(true);
+    }
+  }, [searchParams]);
+
   const handleStyleSelect = (style: CarouselStyle) => {
+    console.log('Style selected:', style);
     setSelectedStyle(style);
     setCurrentStep('prompt');
   };
 
-  const doMockGenerate = (promptText: string) => {
+  const doMockGenerate = useCallback((promptText: string) => {
     setPrompt(promptText);
     const mockCarousel: Carousel = {
       id: 'mock-carousel',
@@ -70,7 +82,7 @@ export default function Home() {
     };
     setGeneratedCarousel(mockCarousel);
     setCurrentStep('preview');
-  };
+  }, [selectedStyle]);
 
   const handlePromptSubmit = (promptText: string) => {
     if (!user) {
@@ -94,16 +106,20 @@ export default function Home() {
       pendingActionRef.current = null;
       setAuthOpen(false);
     }
-  }, [user]);
+  }, [user, doMockGenerate]);
 
   const handleEditCarousel = (updatedCarousel: Carousel) => {
     setGeneratedCarousel(updatedCarousel);
   };
 
   const renderCurrentStep = () => {
+    console.log('Current step:', currentStep);
     switch (currentStep) {
       case 'landing':
-        return <LandingPage onGetStarted={() => setCurrentStep('style')} />;
+        return <LandingPage onGetStarted={() => {
+          console.log('Get started clicked, changing to style step');
+          setCurrentStep('style');
+        }} />;
       case 'style':
         return <StyleSelector onStyleSelect={handleStyleSelect} onBack={() => setCurrentStep('landing')} />;
       case 'prompt':
@@ -144,6 +160,12 @@ export default function Home() {
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
         onSuccess={() => {
+          // Check if user came from dashboard redirect
+          if (searchParams.get('login') === 'true') {
+            window.location.href = '/dashboard';
+            return;
+          }
+          
           // Immediately resume pending action without waiting for auth state propagation
           if (pendingActionRef.current?.type === 'generate') {
             const saved = localStorage.getItem('pendingPrompt');
@@ -157,5 +179,13 @@ export default function Home() {
         }}
       />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

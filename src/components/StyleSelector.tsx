@@ -86,7 +86,7 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
           {/* Help Text */}
           <div className="mt-12 text-center">
             <p className="text-gray-500">
-              Don't worry, you can always customize colors, fonts, and layouts later in the editor.
+              Don&apos;t worry, you can always customize colors, fonts, and layouts later in the editor.
             </p>
           </div>
         </div>
