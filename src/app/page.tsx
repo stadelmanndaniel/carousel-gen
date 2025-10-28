@@ -91,7 +91,7 @@ export default function Home() {
         );
       case 'edit':
         return (
-          <CanvasEditor 
+          <CanvasEditor
             carousel={generatedCarousel!} 
             onSave={handleEditCarousel}
             onBack={() => setCurrentStep('preview')}
