@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import AuthModal from '@/components/AuthModal';
+import { useAuth } from '@/hooks/useAuth';
 import LandingPage from '@/components/LandingPage';
 import StyleSelector from '@/components/StyleSelector';
 import PromptEditor from '@/components/PromptEditor';
@@ -14,15 +16,17 @@ export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<CarouselStyle | null>(null);
   const [prompt, setPrompt] = useState('');
   const [generatedCarousel, setGeneratedCarousel] = useState<Carousel | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const pendingActionRef = useRef<null | { type: 'generate'; promptText: string }>(null);
+  const { user } = useAuth();
 
   const handleStyleSelect = (style: CarouselStyle) => {
     setSelectedStyle(style);
     setCurrentStep('prompt');
   };
 
-  const handlePromptSubmit = (promptText: string) => {
+  const doMockGenerate = (promptText: string) => {
     setPrompt(promptText);
-    // Mock carousel generation
     const mockCarousel: Carousel = {
       id: 'mock-carousel',
       title: 'Generated Carousel',
@@ -68,6 +72,30 @@ export default function Home() {
     setCurrentStep('preview');
   };
 
+  const handlePromptSubmit = (promptText: string) => {
+    if (!user) {
+      localStorage.setItem('pendingPrompt', promptText);
+      pendingActionRef.current = { type: 'generate', promptText };
+      setAuthOpen(true);
+      return;
+    }
+    doMockGenerate(promptText);
+  };
+
+  useEffect(() => {
+    if (user && pendingActionRef.current?.type === 'generate') {
+      const saved = localStorage.getItem('pendingPrompt');
+      if (saved) {
+        doMockGenerate(saved);
+        localStorage.removeItem('pendingPrompt');
+      } else {
+        doMockGenerate(pendingActionRef.current.promptText);
+      }
+      pendingActionRef.current = null;
+      setAuthOpen(false);
+    }
+  }, [user]);
+
   const handleEditCarousel = (updatedCarousel: Carousel) => {
     setGeneratedCarousel(updatedCarousel);
   };
@@ -112,6 +140,22 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
       {renderCurrentStep()}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSuccess={() => {
+          // Immediately resume pending action without waiting for auth state propagation
+          if (pendingActionRef.current?.type === 'generate') {
+            const saved = localStorage.getItem('pendingPrompt');
+            if (saved) {
+              doMockGenerate(saved);
+              localStorage.removeItem('pendingPrompt');
+            }
+            pendingActionRef.current = null;
+          }
+          setAuthOpen(false);
+        }}
+      />
     </main>
   );
 }
