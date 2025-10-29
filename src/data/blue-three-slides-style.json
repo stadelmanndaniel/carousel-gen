@@ -15,7 +15,7 @@
           "y": 80,
           "width": 800,
           "height": 200,
-          "font": "Arial",
+          "fontFamily": "Arial",
           "fontSize": 48,
           "fill": "#FFFFFF"
         },
@@ -26,7 +26,7 @@
           "y": 160,
           "width": 800,
           "height": 200,
-          "font": "Arial",
+          "fontFamily": "Arial",
           "fontSize": 32,
           "fill": "#CCCCCC"
         },
@@ -62,7 +62,7 @@
           "y": 80,
           "width": 800,
           "height": 200,
-          "font": "Arial",
+          "fontFamily": "Arial",
           "fontSize": 48,
           "fill": "#FFFFFF"
         },
@@ -73,7 +73,7 @@
           "y": 160,
           "width": 800,
           "height": 200,
-          "font": "Arial",
+          "fontFamily": "Arial",
           "fontSize": 32,
           "fill": "#CCCCCC"
         },
@@ -109,7 +109,7 @@
           "y": 80,
           "width": 800,
           "height": 200,
-          "font": "Arial",
+          "fontFamily": "Arial",
           "fontSize": 48,
           "fill": "#FFFFFF"
         },
@@ -120,7 +120,7 @@
           "y": 160,
           "width": 800,
           "height": 200,
-          "font": "Arial",
+          "fontFamily": "Arial",
           "fontSize": 32,
           "fill": "#CCCCCC"
         },

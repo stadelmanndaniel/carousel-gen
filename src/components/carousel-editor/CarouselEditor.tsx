@@ -7,6 +7,13 @@ import ImageObject from "./objects/ImageObject";
 import ReplaceImageModal from "./ReplaceImageModal";
 import { getSupabaseClient } from '@/lib/supabase/client';
 
+const AVAILABLE_FONTS = [
+  { name: "System Serif (Times New Roman)", value: "Times New Roman, serif" },
+  { name: "System Sans-Serif (Arial)", value: "Arial" },
+  { name: "Georgia", value: "Georgia, serif" },
+  { name: "Verdana", value: "Verdana, sans-serif" }
+];
+
 interface LayoutObject {
   id: string;
   type: string;
@@ -165,6 +172,23 @@ export default function CarouselEditor({
                 }
                 className="border p-1 rounded w-16 h-8"
                 />
+
+                <label className="text-sm text-gray-600">Font Family:</label>
+                <select
+                    value={selectedObject.fontFamily || "Arial, sans-serif"}
+                    onChange={(e) =>
+                        handleChange(selectedObject.id, { fontFamily: e.target.value })
+                    }
+                    className="border p-1 rounded w-full"
+                    style={{ fontFamily: selectedObject.fontFamily }} // Preview font in the selector
+                >
+                    {AVAILABLE_FONTS.map((font) => (
+                        <option key={font.value} value={font.value}>
+                            {font.name}
+                        </option>
+                    ))}
+                </select>
+                
             </>
             )}
             {selectedObject.type === "image" || selectedObject.type === "logo" ? (

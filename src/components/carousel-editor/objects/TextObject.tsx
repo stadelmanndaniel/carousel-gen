@@ -25,8 +25,8 @@ export default function TextObject({
       height={object.height}
       text={object.text ?? resultData[object.id] ?? ""}
       fontSize={object.fontSize}
-      fontFamily={object.font || "Arial"}
       fill={object.fill || "#000"}
+      fontFamily={object.fontFamily || "Arial"} // Use a safe default
       draggable
       onClick={onSelect}
       onTap={onSelect}
