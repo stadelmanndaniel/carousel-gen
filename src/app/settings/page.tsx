@@ -1,5 +1,4 @@
 "use client";
-// @ts-nocheck
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,18 +40,17 @@ export default function SettingsPage() {
         .from("profiles")
         .select("logo_path")
         .eq("id", user.id)
-        .single() as any;
+        .single();
       
       // If no profile exists, create one
       if (!existingProfile) {
         const { error: insertError } = await supabase
           .from("profiles")
-          // Cast to any to satisfy generic typing when Database types are not generated
           .upsert({
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || null
-          } as any, { onConflict: 'id' } as any);
+          }, { onConflict: 'id' });
         if (insertError) {
           console.error('Failed to create profile:', insertError);
           return;
@@ -64,7 +62,7 @@ export default function SettingsPage() {
         .from("profiles")
         .select("logo_path")
         .eq("id", user.id)
-        .single() as any;
+        .single();
         
       if (data?.logo_path) {
         const { data: signed } = await supabase.storage
@@ -99,7 +97,7 @@ export default function SettingsPage() {
       if (upErr) throw upErr;
       const { error: profErr } = await supabase
         .from("profiles")
-        .update({ logo_path: objectPath } as any)
+        .update({ logo_path: objectPath })
         .eq("id", user.id);
       if (profErr) throw profErr;
       const { data: signed } = await supabase.storage
