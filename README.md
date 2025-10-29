@@ -311,6 +311,11 @@ NEXT_PUBLIC_SUPABASE_URL=your-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+## Deployment
+
+- The production deployment on Vercel uses Next.js route handlers under `/api/*`.
+- The Python FastAPI service in `api/` is kept in the repo but is not routed in production to avoid conflicts with Next.js APIs. See `api/README.md` for details and instructions on how to run locally or enable under a separate prefix (e.g., `/pyapi/*`) later.
+
 2. In Supabase SQL Editor, run:
 ```sql
 create extension if not exists pgcrypto;
