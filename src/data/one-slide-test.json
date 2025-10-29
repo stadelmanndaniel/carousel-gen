@@ -1,0 +1,75 @@
+{
+  "global_request": "Given the following concept: \"{prompt}\", generate the content for an Instagram carousel with three slides. Each slide should have a title, subtitle, image, and logo. Keep the tone consistent across slides.",
+  "layouts": [
+    {
+      "scene": {
+        "width": 1080,
+        "height": 1350,
+        "background": "#002147"
+      },
+      "objects": [
+        {
+          "id": "1_title",
+          "type": "text",
+          "x": 80,
+          "y": 80,
+          "width": 800,
+          "height": 200,
+          "font": "Arial",
+          "fontSize": 48,
+          "fill": "#FFFFFF"
+        },
+        {
+          "id": "1_subtitle",
+          "type": "text",
+          "x": 80,
+          "y": 160,
+          "width": 800,
+          "height": 200,
+          "font": "Arial",
+          "fontSize": 32,
+          "fill": "#CCCCCC"
+        },
+        {
+          "id": "1_image",
+          "type": "image",
+          "x": 100,
+          "y": 280,
+          "width": 880,
+          "height": 500
+        },
+        {
+          "id": "1_logo",
+          "type": "logo",
+          "x": 930,
+          "y": 1150,
+          "width": 100,
+          "height": 100
+        }
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "local_context": "Slide 1: set the stage with an engaging opener that introduces the topic.",
+      "content": [
+        {
+          "id": "1_title",
+          "type": "text",
+          "instruction": "Write a bold, attention-grabbing title introducing the theme."
+        },
+        {
+          "id": "1_subtitle",
+          "type": "text",
+          "instruction": "Add a short supporting subtitle explaining why this topic matters."
+        },
+        {
+          "id": "1_image",
+          "type": "image",
+          "aspect_ratio": "16:9",
+          "instruction": "Create an image that visually represents the concept being introduced."
+        }
+      ]
+    }
+  ]
+}
