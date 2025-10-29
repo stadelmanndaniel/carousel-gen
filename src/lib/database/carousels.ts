@@ -20,6 +20,12 @@ export interface DatabaseCarousel {
   }>;
 }
 
+export type DashboardProject = {
+  id: string;
+  title: string;  
+  createdAt: Date; 
+};
+
 export async function getUserCarousels(userId: string): Promise<Carousel[]> {
   const supabase = getSupabaseClient();
   
@@ -233,4 +239,52 @@ function transformDatabaseCarousel(dbCarousel: DatabaseCarousel): Carousel {
     prompt: dbCarousel.prompt,
     createdAt: new Date(dbCarousel.created_at),
   };
+}
+
+
+interface SupabaseJoinedProject {
+    project_id: string;
+    projects: {
+        id: string;
+        name: string;
+        created_at: string;
+    } | null; // Projects can be null if the join fails, though unlikely here
+}
+
+
+export async function fetchDashboardProjects(userId: string): Promise<DashboardProject[]> {
+  const supabase = getSupabaseClient();
+  
+  // 1. Query the 'user_projects' table and perform a join
+  const { data, error } = await (supabase as any)
+    .from('user_projects')
+    .select(`
+      project_id,
+      projects (id, name, created_at)
+    `)
+    .eq('user_id', userId)
+    .order('added_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching dashboard projects:', error);
+    throw error;
+  }
+
+  // 2. Map and flatten the data structure, explicitly using the new interface type
+  const projects = (data as SupabaseJoinedProject[]).map((item) => { // 🎯 FIX 1: Cast data array
+      
+      // 🎯 FIX 2: Explicitly type the item parameter
+      const projectData = item.projects; 
+      
+      // Filter out null results (safety check)
+      if (!projectData) return null;
+
+      return {
+          id: projectData.id,
+          title: projectData.name, // The project name is the title
+          createdAt: new Date(projectData.created_at),
+      } as DashboardProject;
+  }).filter((item): item is DashboardProject => item !== null); // 🎯 FIX 3: Type assertion filter
+
+  return projects;
 }

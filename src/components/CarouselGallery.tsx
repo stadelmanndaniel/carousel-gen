@@ -1,19 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Carousel } from '@/types';
 import { Plus, Calendar, Eye, Edit, Download, Trash2, MoreVertical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
+interface DashboardProject {
+  id: string;      
+  title: string;   
+  createdAt: Date; 
+  // Add other necessary fields if they existed in the full type but are needed here, like 'prompt'.
+  // We'll assume for simplicity that 'prompt' is NOT available in the lightweight fetch.
+}
+
 interface CarouselGalleryProps {
-  carousels: Carousel[];
+  carousels: DashboardProject[];
   loading: boolean;
-  onCarouselSelect: (carousel: Carousel) => void;
+  onCarouselSelect: (carousel: DashboardProject) => void;
   onNewCarousel: () => void;
 }
 
 export default function CarouselGallery({ carousels, loading, onCarouselSelect, onNewCarousel }: CarouselGalleryProps) {
-  const [selectedCarousel, setSelectedCarousel] = useState<Carousel | null>(null);
+  const [selectedCarousel, setSelectedCarousel] = useState<DashboardProject | null>(null);
   const [showActions, setShowActions] = useState<string | null>(null);
 
   if (loading) {
@@ -79,14 +86,11 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
               {/* Carousel Preview */}
               <div className="relative">
                 <div 
-                  className="h-48 rounded-t-lg bg-gradient-to-br p-4 flex items-center justify-center"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${carousel.style.colors[0]}, ${carousel.style.colors[1]})` 
-                  }}
+                  className="h-48 rounded-t-lg bg-gray-600 p-4 flex items-center justify-center" // 🎯 Use a static background color
                 >
                   <div className="text-center text-white">
                     <div className="text-2xl font-bold mb-2">{carousel.title}</div>
-                    <div className="text-sm opacity-90">{carousel.slides.length} slides</div>
+                    <div className="text-sm opacity-90">Project ID: {carousel.id.substring(0, 8)}...</div>
                   </div>
                 </div>
                 
@@ -146,19 +150,19 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
                 </div>
               </div>
 
-              {/* Carousel Info */}
+             {/* Carousel Info */}
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">{carousel.title}</h3>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{carousel.prompt}</p>
+                {/* ❌ REMOVED: <p className="text-sm text-gray-600 mb-3 line-clamp-2">{carousel.prompt}</p> */}
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">Prompt data not available</p>
                 
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
                     <Calendar className="w-4 h-4" />
                     <span>{formatDistanceToNow(carousel.createdAt, { addSuffix: true })}</span>
                   </div>
-                  <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                    {carousel.style.name}
-                  </span>
+                  {/* ❌ REMOVED: <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{carousel.style.name}</span> */}
+                  <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">Default Style</span>
                 </div>
               </div>
 
@@ -173,7 +177,8 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
                 </button>
                 <button
                   onClick={() => {
-                    // TODO: Implement edit functionality
+                    // This will now use onCarouselSelect(carousel) which redirects to the editor
+                    onCarouselSelect(carousel)
                   }}
                   className="flex-1 flex items-center justify-center space-x-2 py-2 px-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
                 >

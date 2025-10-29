@@ -66,6 +66,25 @@ export async function POST(req: NextRequest) {
     // --- Supabase Storage ---
     const project_id = uuidv4();
     const folderPath = `${user_id}/${project_id}/`;
+
+    // 🎯 STEP 1: Insert into projects table
+    const projectName = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+    const { error: projectInsertError } = await supabase.from('projects').insert([
+        { id: project_id, name: projectName },
+    ]);
+    if (projectInsertError) {
+        console.error("Project insertion failed:", projectInsertError);
+        throw projectInsertError;
+    }
+
+    // 🎯 STEP 2: Link user to project in user_projects table
+    const { error: userProjectInsertError } = await supabase.from('user_projects').insert([
+        { user_id: user_id, project_id: project_id, role: 'owner' },
+    ]);
+    if (userProjectInsertError) {
+        console.error("User-Project link failed:", userProjectInsertError);
+        throw userProjectInsertError;
+    }
     
     // a) Save style JSON
     await supabase.storage
