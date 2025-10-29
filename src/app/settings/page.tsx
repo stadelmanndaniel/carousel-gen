@@ -46,11 +46,12 @@ export default function SettingsPage() {
       if (!existingProfile) {
         const { error: insertError } = await supabase
           .from("profiles")
+          // Cast to any to satisfy generic typing when Database types are not generated
           .upsert({
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || null
-          }, { onConflict: 'id' });
+          } as any, { onConflict: 'id' } as any);
         if (insertError) {
           console.error('Failed to create profile:', insertError);
           return;
