@@ -1,40 +1,48 @@
+import React from "react";
 import { Text } from "react-konva";
 
-export default function TextObject({ object, resultData, isSelected, onSelect, onChange }: any) {
-  const { id, x, y, width, height, font, fontSize, fill } = object;
-  const text = resultData?.[id] || "Text";
+interface TextObjectProps {
+  object: any;
+  isSelected: boolean;
+  onSelect: () => void;
+  onChange: (updates: any) => void;
+  resultData?: any;
+}
 
+export default function TextObject({
+  object,
+  isSelected,
+  onSelect,
+  onChange,
+  resultData = {},
+}: TextObjectProps) {
   return (
     <Text
-      id={id}
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      text={text}
-      fontFamily={font}
-      fontSize={fontSize}
-      fill={fill}
-      wrap="word"
-      align="left"
+      id={object.id}
+      x={object.x}
+      y={object.y}
+      width={object.width}
+      height={object.height}
+      text={object.text ?? resultData[object.id] ?? ""}
+      fontSize={object.fontSize}
+      fontFamily={object.font || "Arial"}
+      fill={object.fill || "#000"}
       draggable
       onClick={onSelect}
       onTap={onSelect}
-      onDragEnd={(e) => onChange({ ...object, x: e.target.x(), y: e.target.y() })}
+      onDragEnd={(e) =>
+        onChange({ x: e.target.x(), y: e.target.y() })
+      }
       onTransformEnd={(e) => {
         const node = e.target;
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
-
-        node.scaleX(1);
-        node.scaleY(1);
         onChange({
-          ...object,
           x: node.x(),
           y: node.y(),
-          width: Math.max(10, node.width() * scaleX),
-          height: Math.max(10, node.height() * scaleY),
+          width: node.width() * node.scaleX(),
+          height: node.height() * node.scaleY(),
         });
+        node.scaleX(1);
+        node.scaleY(1);
       }}
     />
   );

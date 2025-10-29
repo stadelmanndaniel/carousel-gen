@@ -131,11 +131,10 @@ export default function CarouselPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-5xl mx-auto px-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Carousel Viewer</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Carousel Editor</h1>
 
         {/* Style section */}
         <div className="bg-white rounded-2xl shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-3">🎨 Carousel Viewer</h2>
 
           {/* Slide selector */}
           <div className="mb-4">
