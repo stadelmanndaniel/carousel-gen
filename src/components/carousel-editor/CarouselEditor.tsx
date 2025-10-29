@@ -2,7 +2,8 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Stage, Layer, Transformer, Rect } from "react-konva";
-import Konva from "konva";
+import { Stage as KonvaStage } from 'konva/lib/Stage';
+import { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
 import { Loader2, AlertCircle } from "lucide-react";
 import TextObject from "./objects/TextObject";
 import ImageObject from "./objects/ImageObject";
@@ -82,9 +83,9 @@ export default function CarouselEditor({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
-  
-  const stageRef = useRef<Konva.Stage | null>(null);
-  const supabase = getSupabaseClient(); 
+
+  const stageRef = useRef<KonvaStage | null>(null);
+  const supabase = getSupabaseClient();
 
   
   // --- Data Fetching Effect (Step 1 & 2) ---
@@ -435,9 +436,9 @@ function TransformerComponent({
   stageRef,
 }: {
   selectedId: string | null;
-  stageRef: React.RefObject<Konva.Stage>;
+  stageRef: React.RefObject<KonvaStage>;
 }) {
-  const transformerRef = useRef<Konva.Transformer | null>(null);
+  const transformerRef = useRef<KonvaTransformer | null>(null);
 
   useEffect(() => {
     const stage = stageRef.current;
