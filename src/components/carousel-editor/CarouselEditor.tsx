@@ -4,6 +4,8 @@ import { Stage, Layer, Transformer, Rect } from "react-konva";
 import Konva from "konva";
 import TextObject from "./objects/TextObject";
 import ImageObject from "./objects/ImageObject";
+import ReplaceImageModal from "./ReplaceImageModal";
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface LayoutObject {
   id: string;
@@ -23,6 +25,8 @@ interface CarouselEditorProps {
   result: { [key: string]: any };
   images?: { name: string; url: string }[];
   scale?: number; // optional scale for preview
+  userId: string;
+  projectId: string;
 }
 
 export default function CarouselEditor({
@@ -30,10 +34,29 @@ export default function CarouselEditor({
   result,
   images = [],
   scale = 0.5,
+  userId,
+  projectId,
 }: CarouselEditorProps) {
   const [objects, setObjects] = useState<LayoutObject[]>(layout.objects || []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [imageList, setImageList] = useState(images);
+  const supabase = getSupabaseClient();
+
+  const handleReplaceImage = (url: string, name: string) => {
+    if (selectedObject) {
+        handleChange(selectedObject.id, { 
+            imageUrl: url, 
+            imageFileName: name // Optional, for display/tracking
+        });
+        setShowReplaceModal(false);
+    }
+  }; 
+
+  const handleUploadComplete = (file: { name: string; url: string }) => {
+    setImageList((prev) => [...prev, file]);
+  };
 
   const PROPERTIES_PANEL_WIDTH = 300;
 
@@ -144,6 +167,17 @@ export default function CarouselEditor({
                 />
             </>
             )}
+            {selectedObject.type === "image" || selectedObject.type === "logo" ? (
+            <>
+                <button
+                onClick={() => setShowReplaceModal(true)}
+                className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                >
+                Replace Image
+                </button>
+            </>
+            ) : null}
+
           </>
         ) : (
           <p className="text-gray-500 text-sm">Select an object to edit its properties</p>
@@ -217,6 +251,15 @@ export default function CarouselEditor({
           </Layer>
         </Stage>
       </div>
+      {showReplaceModal && (
+        <ReplaceImageModal
+            images={imageList}
+            projectPath={`${userId}/${projectId}/`}
+            onClose={() => setShowReplaceModal(false)}
+            onSelectImage={handleReplaceImage}
+            onUploadComplete={handleUploadComplete}
+            />
+      )}
     </div>
   );
 }

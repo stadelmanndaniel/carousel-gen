@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { Loader2, AlertCircle } from "lucide-react";
 import CarouselEditor from "@/components/carousel-editor/CarouselEditor";
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 type ProjectData = {
   style?: any;
@@ -21,11 +21,7 @@ export default function CarouselPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
 
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
     const init = async () => {
@@ -158,6 +154,8 @@ export default function CarouselPage() {
               layout={style.layouts[activeSlide]}
               result={result[activeSlide]}
               images={images}
+              userId={user.id}
+              projectId={project_id ? project_id : ""}
             />
           </div>
         </div>
