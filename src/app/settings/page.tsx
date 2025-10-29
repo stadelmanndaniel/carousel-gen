@@ -40,7 +40,7 @@ export default function SettingsPage() {
         .from("profiles")
         .select("logo_path")
         .eq("id", user.id)
-        .single();
+        .single() as any;
       
       // If no profile exists, create one
       if (!existingProfile) {
@@ -63,7 +63,7 @@ export default function SettingsPage() {
         .from("profiles")
         .select("logo_path")
         .eq("id", user.id)
-        .single();
+        .single() as any;
         
       if (data?.logo_path) {
         const { data: signed } = await supabase.storage
@@ -98,7 +98,7 @@ export default function SettingsPage() {
       if (upErr) throw upErr;
       const { error: profErr } = await supabase
         .from("profiles")
-        .update({ logo_path: objectPath })
+        .update({ logo_path: objectPath } as any)
         .eq("id", user.id);
       if (profErr) throw profErr;
       const { data: signed } = await supabase.storage
