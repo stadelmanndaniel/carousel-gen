@@ -1,0 +1,5 @@
+# Ignore Python API folder - we're using Next.js API routes only
+api/
+api/**
+pyproject.toml
+
