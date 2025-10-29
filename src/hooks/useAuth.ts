@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import type { SupabaseClient, Session, User } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
 export function useAuth() {
   const supabase = getSupabaseClient();
@@ -51,7 +53,12 @@ export function useAuth() {
     }
   }, []); // Remove supabase dependency to prevent infinite loop
 
-  return { supabase, session, loading, user: session?.user ?? null } as const;
+  return { 
+    supabase: supabase as SupabaseClient<Database>, 
+    session, 
+    loading, 
+    user: session?.user ?? null 
+  };
 }
 
 
