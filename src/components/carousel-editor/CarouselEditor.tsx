@@ -231,7 +231,6 @@ export default function CarouselEditor({
     }
   };
 
-  // --- Helper to render and export all slides (NEW) ---
 
   const handleExportAllSlides = useCallback(async (saveToDisk = false) => {
     if (!stageRef.current || !fullStyle || !fullResult) return;
@@ -252,7 +251,7 @@ export default function CarouselEditor({
             setActiveSlide(i); 
 
             // Wait for the next tick to ensure Konva re-rendered the new slide content
-            await new Promise(resolve => setTimeout(resolve, 50)); 
+            await new Promise(resolve => setTimeout(resolve, 2000)); 
             
             // 2. Export the current stage content (the newly rendered slide)
             const dataURL = stage.toDataURL({
@@ -275,7 +274,8 @@ export default function CarouselEditor({
                         })
                 );
 
-            } else if (i === 0) {
+            }
+            if (i === 0) {
                 // Option 2: Just show the first slide for immediate visual confirmation (or download)
                 // If the goal is just *preview*, you might show it in a modal or new tab.
                 // For simplicity, we'll just save the first slide as 'preview.png' in Supabase.
@@ -305,7 +305,7 @@ export default function CarouselEditor({
         setActiveSlide(originalSlide);
         setIsExporting(false);
     }
-  }, [activeSlide, fullStyle, fullResult, userId, projectId, scale]);
+  }, [fullStyle, fullResult, userId, projectId, scale]);
 
     const handleGenerateAndDownloadZip = async () => {
         if (isExporting) return;
@@ -375,9 +375,9 @@ export default function CarouselEditor({
             
             // Use a slight delay to ensure Konva finishes its draw cycle
             const timer = setTimeout(() => {
-                handleExportAllSlides(false)
+                handleExportAllSlides(true)
                     .then(() => {
-                        console.log("Initial preview.png successfully generated.");
+                        console.log("Initial preview.png successfully generated and all slides saved.");
                         setInitialPreviewGenerated(true); // Mark as done
                     })
                     .catch((e) => {
