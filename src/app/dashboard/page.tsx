@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Carousel } from '@/types';
 import DashboardHeader from '@/components/DashboardHeader';
 import CarouselGallery from '@/components/CarouselGallery';
 import UserProfile from '@/components/UserProfile';
 import UsageStats from '@/components/UsageStats';
-import { getUserCarousels } from '@/lib/database/carousels';
+import { getUserCarousels, fetchDashboardProjects, DashboardProject } from '@/lib/database/carousels';
 import { Loader2 } from 'lucide-react';
 
 type DashboardTab = 'carousels' | 'stats';
@@ -17,7 +16,7 @@ export default function Dashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<DashboardTab>('carousels');
-  const [userCarousels, setUserCarousels] = useState<Carousel[]>([]);
+  const [userCarousels, setUserCarousels] = useState<DashboardProject[]>([]);
   const [carouselsLoading, setCarouselsLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -33,6 +32,7 @@ export default function Dashboard() {
     }
   }, [user, loading, router]);
 
+
   // Add timeout to prevent infinite loading
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -45,17 +45,16 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [loading]);
 
-  // Load user carousels from database
   useEffect(() => {
     if (user) {
       const loadCarousels = async () => {
         try {
           setCarouselsLoading(true);
-          const carousels = await getUserCarousels(user.id);
-          setUserCarousels(carousels);
+          // 🎯 Call the lightweight fetch function
+          const projects = await fetchDashboardProjects(user.id); 
+          setUserCarousels(projects);
         } catch (error) {
           console.error('Error loading carousels:', error);
-          // Fallback to empty array on error
           setUserCarousels([]);
         } finally {
           setCarouselsLoading(false);
@@ -117,27 +116,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key`}
                   setUserCarousels([
                     {
                       id: 'demo-1',
-                      title: 'Demo Carousel',
-                      style: {
-                        id: 'kalshi',
-                        name: 'Kalshi Style',
-                        description: 'Clean, professional look',
-                        preview: '/images/kalshi-preview.png',
-                        category: 'kalshi',
-                        colors: ['#3B82F6', '#1E40AF', '#1D4ED8', '#2563EB']
-                      },
-                      slides: [
-                        {
-                          id: 'slide-1',
-                          imageUrl: '/api/placeholder/400/400',
-                          text: 'Welcome to the demo dashboard!',
-                          position: 1,
-                          backgroundColor: '#3B82F6',
-                          textColor: '#ffffff'
-                        }
-                      ],
-                      prompt: 'Demo carousel for testing',
-                      createdAt: new Date()
+                      title: 'Demo Carousel (Mock)',
+                      createdAt: new Date(),
+                      // NOTE: Removed style, slides, and prompt fields to match DashboardProject
                     }
                   ]);
                   setCarouselsLoading(false);
@@ -162,15 +143,24 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key`}
           <CarouselGallery 
             carousels={userCarousels} 
             loading={carouselsLoading}
+            // 🎯 Use the project ID to navigate to the editor
             onCarouselSelect={(carousel) => {
-              // TODO: Navigate to carousel editor or preview
-              console.log('Selected carousel:', carousel);
+              router.push(`/carousel?project_id=${carousel.id}`);
             }}
             onNewCarousel={() => router.push('/')}
+            currentUserId={user.id}
           />
         );
       case 'stats':
-        return <UsageStats user={user} carousels={userCarousels} />;
+        // NOTE: If UsageStats uses the full Carousel type, this needs to be refactored 
+        // to pass only the data it needs (like count, creation dates).
+        // return <UsageStats user={user} carousels={userCarousels} />;
+        return (
+          <div className="p-6 bg-white rounded-lg shadow">
+            <h2 className="text-xl font-bold">Usage Stats</h2>
+            <p className="text-gray-600 mt-2">Stats data is currently unavailable due to data structure changes. Total Carousels: {userCarousels.length}</p>
+          </div>
+        );
       default:
         return null;
     }

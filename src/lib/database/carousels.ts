@@ -20,6 +20,12 @@ export interface DatabaseCarousel {
   }>;
 }
 
+export type DashboardProject = {
+  id: string;
+  title: string;  
+  createdAt: Date; 
+};
+
 export async function getUserCarousels(userId: string): Promise<Carousel[]> {
   const supabase = getSupabaseClient();
   
@@ -233,4 +239,63 @@ function transformDatabaseCarousel(dbCarousel: DatabaseCarousel): Carousel {
     prompt: dbCarousel.prompt,
     createdAt: new Date(dbCarousel.created_at),
   };
+}
+
+
+interface SupabaseJoinedProject {
+    project_id: string;
+    projects: {
+        id: string;
+        name: string;
+        created_at: string;
+    } | null; // Projects can be null if the join fails, though unlikely here
+}
+
+
+export async function fetchDashboardProjects(userId: string): Promise<DashboardProject[]> {
+  const supabase = getSupabaseClient();
+  
+  // 1. Query the 'user_projects' table and perform a join
+  const { data, error } = await (supabase as any)
+    .from('user_projects')
+    .select(`
+      project_id,
+      projects (id, name, created_at)
+    `)
+    .eq('user_id', userId)
+    .order('added_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching dashboard projects:', error);
+    throw error;
+  }
+
+  // 2. Map and create an array of promises for fetching signed URLs
+  const projectPromises = (data as SupabaseJoinedProject[]).map(async (item) => {
+      
+      const projectData = item.projects; 
+      
+      // Filter out null results (safety check)
+      if (!projectData) return null;
+
+      const basePath = `${userId}/${item.project_id}/`;
+
+      // Await is now inside the async map callback, which returns a promise
+      const { data: signedUrlData } = await supabase.storage
+        .from('carousels')
+        .createSignedUrl(`${basePath}preview.png`, 60); // 60 seconds validity
+      
+      return {
+          id: projectData.id,
+          title: projectData.name, // The project name is the title
+          createdAt: new Date(projectData.created_at),
+          previewUrl: signedUrlData?.signedUrl || undefined,
+      } as DashboardProject;
+  });
+
+  // 3. Wait for all promises to resolve
+  const resolvedProjects = await Promise.all(projectPromises);
+
+  // 4. Filter out any null entries and return the final array
+  return resolvedProjects.filter((item): item is DashboardProject => item !== null);
 }

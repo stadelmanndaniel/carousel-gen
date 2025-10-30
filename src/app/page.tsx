@@ -12,14 +12,18 @@ import CarouselPreview from '@/components/CarouselPreview';
 import CanvasEditor from '@/components/CanvasEditor';
 import ExportModal from '@/components/ExportModal';
 import { CarouselStyle, Carousel } from '@/types';
+import { Loader2 } from 'lucide-react';
 
 function HomeContent() {
   const searchParams = useSearchParams();
+
+  
 
   const [currentStep, setCurrentStep] = useState<'landing' | 'style' | 'prompt' | 'preview' | 'edit' | 'export'>('landing');
   const [selectedStyle, setSelectedStyle] = useState<CarouselStyle | null>(null);
   const [prompt, setPrompt] = useState('');
   const [generatedCarousel, setGeneratedCarousel] = useState<Carousel | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const pendingActionRef = useRef<null | { type: 'generate'; promptText: string }>(null);
   const { user, supabase } = useAuth();
@@ -50,6 +54,8 @@ function HomeContent() {
       return;
     }
 
+    setIsGenerating(true);
+
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
       const response = await fetch("/api/generate", {
@@ -69,6 +75,8 @@ function HomeContent() {
     } catch (err: any) {
       console.error(err);
       alert("Generation failed: " + err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -145,6 +153,13 @@ function HomeContent() {
   return (
     <main className="min-h-screen bg-gray-50">
       {renderCurrentStep()}
+      {isGenerating && ( // ✅ Show this when generating
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+          <Loader2 className="w-10 h-10 animate-spin text-white mb-4" />
+          <p className="text-white text-lg font-semibold">Generating your carousel...</p>
+          <p className="text-gray-300 text-sm mt-1">This might take up to a minute.</p>
+        </div>
+      )}
       <AuthModal
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
