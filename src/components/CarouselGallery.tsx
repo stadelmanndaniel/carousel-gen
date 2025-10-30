@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Calendar, Eye, Edit, Download, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Calendar, Eye, Edit, Download, Trash2, MoreVertical, Save } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface DashboardProject {
   id: string;      
   title: string;   
   createdAt: Date; 
+  previewUrl?: string; // 🌟 NEW: Optional field for the signed URL
   // Add other necessary fields if they existed in the full type but are needed here, like 'prompt'.
   // We'll assume for simplicity that 'prompt' is NOT available in the lightweight fetch.
 }
@@ -17,11 +18,40 @@ interface CarouselGalleryProps {
   loading: boolean;
   onCarouselSelect: (carousel: DashboardProject) => void;
   onNewCarousel: () => void;
+  currentUserId: string;
 }
 
-export default function CarouselGallery({ carousels, loading, onCarouselSelect, onNewCarousel }: CarouselGalleryProps) {
+export default function CarouselGallery({ carousels, loading, onCarouselSelect, onNewCarousel, currentUserId }: CarouselGalleryProps) {
   const [selectedCarousel, setSelectedCarousel] = useState<DashboardProject | null>(null);
   const [showActions, setShowActions] = useState<string | null>(null);
+
+  const handleDownloadZip = async (carousel: DashboardProject) => {
+      try {
+          // Use the passed-in currentUserId
+          const response = await fetch(`/api/slides-download?userId=${currentUserId}&projectId=${carousel.id}`, {
+              method: 'GET',
+          });
+
+        if (!response.ok) {
+            throw new Error('Failed to start ZIP download.');
+        }
+
+          // 2. Trigger the file download in the browser
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${carousel.title.replace(/\s+/g, '-')}-${carousel.id.substring(0, 4)}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+
+      } catch (error) {
+          console.error('Download failed:', error);
+          alert('Failed to download carousel slides. Please try again.');
+      }
+  };
 
   if (loading) {
     return (
@@ -79,20 +109,31 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {carousels.map((carousel) => (
-            <div
-              key={carousel.id}
-              className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200 group"
-            >
-              {/* Carousel Preview */}
-              <div className="relative">
-                <div 
-                  className="h-48 rounded-t-lg bg-gray-600 p-4 flex items-center justify-center" // 🎯 Use a static background color
-                >
-                  <div className="text-center text-white">
-                    <div className="text-2xl font-bold mb-2">{carousel.title}</div>
-                    <div className="text-sm opacity-90">Project ID: {carousel.id.substring(0, 8)}...</div>
-                  </div>
-                </div>
+    <div
+      key={carousel.id}
+      className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200 group"
+    >
+      {/* Carousel Preview */}
+      <div className="relative">
+        <div 
+          // Use the URL if available, otherwise fall back to a placeholder
+          className="h-48 rounded-t-lg p-4 flex items-center justify-center overflow-hidden" 
+          style={{ backgroundColor: carousel.previewUrl ? 'transparent' : '#e5e7eb' }} // Use light gray if no image
+        >
+          {carousel.previewUrl ? (
+            // 🌟 Use the signed URL as the image source
+            <img 
+              src={carousel.previewUrl} 
+              alt={`Preview for ${carousel.title}`}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <div className="text-center text-gray-500">
+              <Eye className="w-8 h-8 mx-auto mb-2" />
+              <div className="text-sm">No Preview Available</div>
+            </div>
+          )}
+        </div>
                 
                 {/* Actions Menu */}
                 <div className="absolute top-2 right-2">
@@ -117,7 +158,6 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
                       </button>
                       <button
                         onClick={() => {
-                          // TODO: Implement edit functionality
                           setShowActions(null);
                         }}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -127,13 +167,13 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
                       </button>
                       <button
                         onClick={() => {
-                          // TODO: Implement download functionality
+                          handleDownloadZip(carousel);
                           setShowActions(null);
                         }}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         <Download className="w-4 h-4" />
-                        <span>Download</span>
+                        <span>Export</span>
                       </button>
                       <button
                         onClick={() => {
@@ -169,11 +209,13 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
               {/* Action Buttons */}
               <div className="px-4 pb-4 flex space-x-2">
                 <button
-                  onClick={() => onCarouselSelect(carousel)}
+                  onClick={() => {
+                    handleDownloadZip(carousel);
+                  }}
                   className="flex-1 flex items-center justify-center space-x-2 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  <Eye className="w-4 h-4" />
-                  <span>View</span>
+                  <Save className="w-4 h-4" />
+                  <span>Export (ZIP)</span>
                 </button>
                 <button
                   onClick={() => {

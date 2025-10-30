@@ -270,21 +270,32 @@ export async function fetchDashboardProjects(userId: string): Promise<DashboardP
     throw error;
   }
 
-  // 2. Map and flatten the data structure, explicitly using the new interface type
-  const projects = (data as SupabaseJoinedProject[]).map((item) => { // 🎯 FIX 1: Cast data array
+  // 2. Map and create an array of promises for fetching signed URLs
+  const projectPromises = (data as SupabaseJoinedProject[]).map(async (item) => {
       
-      // 🎯 FIX 2: Explicitly type the item parameter
       const projectData = item.projects; 
       
       // Filter out null results (safety check)
       if (!projectData) return null;
 
+      const basePath = `${userId}/${item.project_id}/`;
+
+      // Await is now inside the async map callback, which returns a promise
+      const { data: signedUrlData } = await supabase.storage
+        .from('carousels')
+        .createSignedUrl(`${basePath}preview.png`, 60); // 60 seconds validity
+      
       return {
           id: projectData.id,
           title: projectData.name, // The project name is the title
           createdAt: new Date(projectData.created_at),
+          previewUrl: signedUrlData?.signedUrl || undefined,
       } as DashboardProject;
-  }).filter((item): item is DashboardProject => item !== null); // 🎯 FIX 3: Type assertion filter
+  });
 
-  return projects;
+  // 3. Wait for all promises to resolve
+  const resolvedProjects = await Promise.all(projectPromises);
+
+  // 4. Filter out any null entries and return the final array
+  return resolvedProjects.filter((item): item is DashboardProject => item !== null);
 }
