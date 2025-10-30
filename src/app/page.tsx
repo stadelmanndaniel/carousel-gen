@@ -64,7 +64,7 @@ function HomeContent() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: promptText, style_id: "one-slide-test"}),
+        body: JSON.stringify({ prompt: promptText, style_id: "blue-three-slides-style"}),
       });
 
       if (!response.ok) throw new Error("Generation API failed");
@@ -157,7 +157,7 @@ function HomeContent() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
           <Loader2 className="w-10 h-10 animate-spin text-white mb-4" />
           <p className="text-white text-lg font-semibold">Generating your carousel...</p>
-          <p className="text-gray-300 text-sm mt-1">This might take a moment.</p>
+          <p className="text-gray-300 text-sm mt-1">This might take up to a minute.</p>
         </div>
       )}
       <AuthModal

@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     // --- Supabase Storage ---
     const project_id = uuidv4();
     const folderPath = `${user_id}/${project_id}/`;
+    const imageFolderPath = `${folderPath}images/`;
 
     // 🎯 STEP 1: Insert into projects table
     const projectName = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
       for (const [id, base64] of Object.entries(slide)) {
         if (typeof base64 === "string" && base64.startsWith("iVBOR")) {
           // Upload image
-          const imagePath = `${folderPath}${id}.png`;
+          const imagePath = `${imageFolderPath}${id}.png`;
 
           // Convert base64 to binary buffer
           const buffer = Buffer.from(base64, "base64");

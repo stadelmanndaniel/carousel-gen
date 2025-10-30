@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseServiceRoleClient(); // Use a service role client to bypass RLS for this specific task
     const storageBucket = 'carousels';
-    const projectPath = `${userId}/${projectId}/preview/`;
+    const projectPath = `${userId}/${projectId}/slides/`;
 
     try {
-        // 1. List all slide files in the 'preview/' subfolder
+        // 1. List all slide files in the 'slides/' subfolder
         const { data: files, error: listError } = await supabase.storage
             .from(storageBucket)
             .list(projectPath, { 

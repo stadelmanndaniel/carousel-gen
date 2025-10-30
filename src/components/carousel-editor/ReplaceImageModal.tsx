@@ -33,7 +33,7 @@ export default function ReplaceImageModal({
       const uid = crypto.randomUUID();
       const ext = file.name.split(".").pop();
       const fileName = `${uid}.${ext}`;
-      const filePath = `${projectPath}${fileName}`;
+      const filePath = `${projectPath}images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("carousels")
@@ -96,7 +96,7 @@ export default function ReplaceImageModal({
                 try {
                     const { data, error } = await supabase.storage
                     .from("carousels")
-                    .createSignedUrl(`${projectPath}${img.name}`, 3600);
+                    .createSignedUrl(`${projectPath}images/${img.name}`, 3600);
                     if (error) throw error;
                     onSelectImage(data.signedUrl, img.name);
                     onClose();

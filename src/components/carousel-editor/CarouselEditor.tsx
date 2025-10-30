@@ -84,6 +84,7 @@ export default function CarouselEditor({
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [initialPreviewGenerated, setInitialPreviewGenerated] = useState(false);
 
   const stageRef = useRef<KonvaStage | null>(null);
   const supabase = getSupabaseClient();
@@ -96,6 +97,7 @@ export default function CarouselEditor({
       setLoading(true);
       try {
         const basePath = `${userId}/${projectId}/`;
+        const imagesPath = `${basePath}images/`;
 
         // Utility function to fetch JSON
         const fetchJson = async (fileName: string) => {
@@ -114,12 +116,12 @@ export default function CarouselEditor({
         // List and sign image URLs
         const { data: imageListRaw, error: listErr } = await supabase.storage
           .from("carousels")
-          .list(basePath, { limit: 100 });
+          .list(imagesPath, { limit: 100 });
         if (listErr) throw listErr;
 
         const imageFileNames = (imageListRaw ?? [])
           .filter((f) => f.name.match(/\.(png|jpg|jpeg)$/))
-          .map((f) => `${basePath}${f.name}`);
+          .map((f) => `${imagesPath}${f.name}`);
 
         const { data: signedUrls, error: batchErr } = await supabase.storage
           .from("carousels")
@@ -127,7 +129,7 @@ export default function CarouselEditor({
         if (batchErr) throw batchErr;
 
         const imageAssets = signedUrls.map((u, i) => ({
-          name: imageFileNames[i].replace(basePath, ''), // Clean filename
+          name: imageFileNames[i].replace(imagesPath, ''), // Clean filename
           url: u.signedUrl,
         }));
         
@@ -200,6 +202,13 @@ export default function CarouselEditor({
   const getImageUrl = (id: string) =>
     imageList.find((img) => img.name === `${id}.png` || img.name === `${id}.jpg`)?.url;
 
+  const handleCheckDeselect = (e: any) => {
+      if (e.target === e.target.getStage()) {
+          setSelectedId(null);
+          return;
+      }
+  };
+
   const handleSaveProject = async () => {
     if (!fullStyle || !fullResult) return;
     
@@ -231,6 +240,8 @@ export default function CarouselEditor({
     const originalSlide = activeSlide;
     const projectPath = `${userId}/${projectId}/`;
     const exportPromises: Promise<any>[] = [];
+    setSelectedId(null);
+    await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to ensure deselection
 
     try {
         const stage = stageRef.current;
@@ -258,7 +269,7 @@ export default function CarouselEditor({
                 exportPromises.push(
                     supabase.storage
                         .from('carousels')
-                        .upload(`${projectPath}preview/slide_${i}.png`, blob, {
+                        .upload(`${projectPath}slides/slide_${i}.png`, blob, {
                             upsert: true,
                             contentType: 'image/png'
                         })
@@ -270,6 +281,8 @@ export default function CarouselEditor({
                 // For simplicity, we'll just save the first slide as 'preview.png' in Supabase.
                 const base64Data = dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
                 const blob = await fetch(dataURL).then(res => res.blob());
+
+                console.log("Uploading preview.png to Supabase Storage...");
 
                 exportPromises.push(
                     supabase.storage
@@ -297,9 +310,9 @@ export default function CarouselEditor({
     const handleGenerateAndDownloadZip = async () => {
         if (isExporting) return;
         try {
-            // 1. Ensure all latest slides are rendered and uploaded to the 'preview/' subfolder
+            // 1. Ensure all latest slides are rendered and uploaded to the 'slides/' subfolder
             // Note: The handleExportAllSlides(true) function now saves to:
-            // 'carousels/${userId}/${projectId}/preview/slide_N.png'
+            // 'carousels/${userId}/${projectId}/slides/slide_N.png'
             await handleExportAllSlides(true);
 
             // 2. Call the API route to zip and download the files
@@ -330,8 +343,11 @@ export default function CarouselEditor({
         }
     };
 
-    const handleExportCurrentSlide = () => {
+    const handleExportCurrentSlide = async () => {
         if (!stageRef.current) return;
+
+        setSelectedId(null);
+        await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to ensure deselection
 
         // 1. Get the Konva stage node
         const stage = stageRef.current;
@@ -350,6 +366,28 @@ export default function CarouselEditor({
         a.click();
         a.remove();
     };
+
+    useEffect(() => {
+        // 1. Check if all required dependencies are present
+        if (stageRef.current && fullStyle && !loading && !initialPreviewGenerated) {
+            // We only want to export the first slide for the 'preview.png' file.
+            // The handleExportAllSlides(false) function does exactly this.
+            
+            // Use a slight delay to ensure Konva finishes its draw cycle
+            const timer = setTimeout(() => {
+                handleExportAllSlides(false)
+                    .then(() => {
+                        console.log("Initial preview.png successfully generated.");
+                        setInitialPreviewGenerated(true); // Mark as done
+                    })
+                    .catch((e) => {
+                        console.error("Failed to generate initial preview:", e);
+                    });
+            }, 1000); // 1000ms should be safe for initial Konva rendering
+            
+            return () => clearTimeout(timer); // Cleanup timer if component unmounts
+        }
+    }, [fullStyle, loading, initialPreviewGenerated, handleExportAllSlides]); // Dependencies
 
   // --- UI Loading/Error Checks ---
 
@@ -524,6 +562,7 @@ export default function CarouselEditor({
           height={currentLayout.scene.height * scale}
           scaleX={scale}
           scaleY={scale}
+          onMouseDown={handleCheckDeselect}
         >
           <Layer>
             {/* Background */}
