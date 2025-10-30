@@ -1,5 +1,5 @@
 {
-  "global_request": "Given the following concept: \"{prompt}\", generate the content for an Instagram carousel with three slides. Each slide should have a title, subtitle, image, and logo. Keep the tone consistent across slides.",
+  "global_request": "Given the following concept: \"{prompt}\", generate the content for an Instagram carousel with three slides. Each slide should have a title, subtitle, image. Keep the tone consistent across slides.",
   "layouts": [
     {
       "scene": {
