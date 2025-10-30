@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Stage, Layer, Transformer, Rect } from "react-konva";
 import { Stage as KonvaStage } from 'konva/lib/Stage';
 import { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Save, Download, Eye } from "lucide-react";
 import TextObject from "./objects/TextObject";
 import ImageObject from "./objects/ImageObject";
 import ReplaceImageModal from "./ReplaceImageModal";
@@ -81,6 +81,7 @@ export default function CarouselEditor({
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
 
@@ -203,11 +204,16 @@ export default function CarouselEditor({
     if (!fullStyle || !fullResult) return;
     
     try {
-        // ✅ Step 5: Saving is easier - save the states directly
-        await Promise.all([
+        // 1. Save the JSON data
+        const savePromise = Promise.all([
             saveJsonToSupabase(userId, projectId, "style.json", fullStyle),
-            saveJsonToSupabase(userId, projectId, "result.json", fullResult), // Save result too
+            saveJsonToSupabase(userId, projectId, "result.json", fullResult),
         ]);
+        
+        // 2. Generate and save the previews (or all slides) to Supabase Storage
+        const exportPromise = handleExportAllSlides(false); // Change to 'true' to save all slides
+
+        await Promise.all([savePromise, exportPromise]);
         
         alert("✅ Project saved successfully!");
     } catch (err: any) {
@@ -215,6 +221,135 @@ export default function CarouselEditor({
         alert("❌ Failed to save project: " + err.message);
     }
   };
+
+  // --- Helper to render and export all slides (NEW) ---
+
+  const handleExportAllSlides = useCallback(async (saveToDisk = false) => {
+    if (!stageRef.current || !fullStyle || !fullResult) return;
+
+    setIsExporting(true);
+    const originalSlide = activeSlide;
+    const projectPath = `${userId}/${projectId}/`;
+    const exportPromises: Promise<any>[] = [];
+
+    try {
+        const stage = stageRef.current;
+        const totalSlides = fullStyle.layouts.length;
+
+        for (let i = 0; i < totalSlides; i++) {
+            // 1. Temporarily change active slide (this triggers state update/re-render)
+            setActiveSlide(i); 
+
+            // Wait for the next tick to ensure Konva re-rendered the new slide content
+            await new Promise(resolve => setTimeout(resolve, 50)); 
+            
+            // 2. Export the current stage content (the newly rendered slide)
+            const dataURL = stage.toDataURL({
+                mimeType: 'image/png',
+                // The current stage scale is 0.5, so we scale it up to full resolution (x2)
+                pixelRatio: 1 / scale, 
+            });
+
+            if (saveToDisk) {
+                // Option 1: Save to Supabase Storage (e.g., as 'preview_0.png', 'slide_1.png')
+                const base64Data = dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+                const blob = await fetch(dataURL).then(res => res.blob());
+
+                exportPromises.push(
+                    supabase.storage
+                        .from('carousels')
+                        .upload(`${projectPath}preview/slide_${i}.png`, blob, {
+                            upsert: true,
+                            contentType: 'image/png'
+                        })
+                );
+
+            } else if (i === 0) {
+                // Option 2: Just show the first slide for immediate visual confirmation (or download)
+                // If the goal is just *preview*, you might show it in a modal or new tab.
+                // For simplicity, we'll just save the first slide as 'preview.png' in Supabase.
+                const base64Data = dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+                const blob = await fetch(dataURL).then(res => res.blob());
+
+                exportPromises.push(
+                    supabase.storage
+                        .from('carousels')
+                        .upload(`${projectPath}preview.png`, blob, {
+                            upsert: true,
+                            contentType: 'image/png'
+                        })
+                );
+            }
+        }
+        
+        await Promise.all(exportPromises);
+
+    } catch (e) {
+        console.error("Export failed:", e);
+        alert("❌ Export failed. Check console for details.");
+    } finally {
+        // 3. Restore the original active slide
+        setActiveSlide(originalSlide);
+        setIsExporting(false);
+    }
+  }, [activeSlide, fullStyle, fullResult, userId, projectId, scale]);
+
+    const handleGenerateAndDownloadZip = async () => {
+        if (isExporting) return;
+        try {
+            // 1. Ensure all latest slides are rendered and uploaded to the 'preview/' subfolder
+            // Note: The handleExportAllSlides(true) function now saves to:
+            // 'carousels/${userId}/${projectId}/preview/slide_N.png'
+            await handleExportAllSlides(true);
+
+            // 2. Call the API route to zip and download the files
+            const response = await fetch(`/api/slides-download?userId=${userId}&projectId=${projectId}`, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to start ZIP download.');
+            }
+
+            // 3. Trigger the file download in the browser
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `carousel-${projectId.substring(0, 8)}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            alert("✅ Download initiated successfully!");
+            
+        } catch (err: any) {
+            console.error(err);
+            alert("❌ Failed to download ZIP: " + err.message);
+        }
+    };
+
+    const handleExportCurrentSlide = () => {
+        if (!stageRef.current) return;
+
+        // 1. Get the Konva stage node
+        const stage = stageRef.current;
+
+        // 2. Export the current stage content at full resolution
+        const dataURL = stage.toDataURL({
+            mimeType: 'image/png',
+            pixelRatio: 1 / scale, 
+        });
+
+        // 3. Trigger immediate browser download (using the DataURL)
+        const a = document.createElement('a');
+        a.href = dataURL;
+        a.download = `carousel-${projectId.substring(0, 8)}_slide-${activeSlide + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    };
 
   // --- UI Loading/Error Checks ---
 
@@ -348,7 +483,28 @@ export default function CarouselEditor({
             >
                 💾 Save Project
             </button>
-            {/* ... Export as PNG button ... */}
+            <div className="flex flex-col gap-2 mt-auto">
+            <button
+                onClick={handleExportCurrentSlide}
+                className="flex items-center justify-center space-x-2 px-4 py-2 rounded font-medium transition-colors bg-blue-500 text-white hover:bg-blue-600"
+            >
+                <Download className="w-5 h-5" />
+                <span>Export Current Slide (PNG)</span>
+            </button>
+            <button
+                // Use the new combined handler
+                onClick={handleGenerateAndDownloadZip} 
+                disabled={isExporting}
+                className={`flex items-center justify-center space-x-2 px-4 py-2 rounded font-medium transition-colors border ${
+                isExporting 
+                    ? 'bg-gray-200 text-gray-600 cursor-not-allowed' 
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+                <Download className="w-5 h-5" />
+                <span>Export All Slides (ZIP)</span>
+            </button>
+        </div>
         </div>
       </div>
 
