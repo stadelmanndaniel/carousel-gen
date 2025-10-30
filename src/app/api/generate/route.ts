@@ -6,6 +6,16 @@ import { createClient } from "@supabase/supabase-js";
 
 
 export async function POST(req: NextRequest) {
+
+  const RUNPOD_URL = process.env.RUNPOD_ENDPOINT_URL;
+  const RUNPOD_KEY = process.env.RUNPOD_API_KEY;
+
+  if (!RUNPOD_URL || !RUNPOD_KEY) {
+    return NextResponse.json({ 
+        error: "Server configuration missing: RUNPOD_ENDPOINT_URL or RUNPOD_API_KEY not set." 
+    }, { status: 500 });
+  }
+
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,19 +59,39 @@ export async function POST(req: NextRequest) {
       requests: template.requests,
     };
 
-    // Call Python API
-    const pythonResponse = await fetch("http://127.0.0.1:8000/api/generate_content", {
+    const runpodResponse = await fetch(`${RUNPOD_URL}/runsync`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: { 
+        "Content-Type": "application/json",
+        // Authorization is required for the RunPod endpoint
+        "Authorization": `Bearer ${RUNPOD_KEY}`, 
+      },
+      // The payload must be wrapped under the 'input' key for the Job Handler
+      body: JSON.stringify({ input: payload }), 
     });
 
-    if (!pythonResponse.ok) {
-      const errText = await pythonResponse.text();
-      throw new Error(`Python API error: ${pythonResponse.status} ${errText}`);
+    if (!runpodResponse.ok) {
+      // Handle HTTP errors from RunPod itself
+      const errText = await runpodResponse.text();
+      throw new Error(`RunPod API HTTP error: ${runpodResponse.status} ${errText}`);
     }
 
-    const generatedData = await pythonResponse.json();
+    const runpodResult = await runpodResponse.json();
+
+    // Check RunPod status for errors returned from the handler function
+    if (runpodResult.status === "FAILED") {
+        // The error field from the Python handler is typically returned here
+        throw new Error(`RunPod Job failed: ${runpodResult.error || "Unknown server error."}`);
+    }
+    
+    if (runpodResult.status !== "COMPLETED" || !runpodResult.output) {
+        // Should not happen with runsync, but a safety check
+        throw new Error(`RunPod Job did not return a completed output. Status: ${runpodResult.status}`);
+    }
+
+    // Extract the final generated data from the 'output' field
+    const generatedData = runpodResult.output;
+    // --- RUNPOD INTEGRATION END ---
 
     // --- Supabase Storage ---
     const project_id = uuidv4();
