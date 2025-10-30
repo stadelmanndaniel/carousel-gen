@@ -1,7 +1,0 @@
-main.py
-pyproject.toml
-vercel_fastapi_app.egg-info/PKG-INFO
-vercel_fastapi_app.egg-info/SOURCES.txt
-vercel_fastapi_app.egg-info/dependency_links.txt
-vercel_fastapi_app.egg-info/requires.txt
-vercel_fastapi_app.egg-info/top_level.txt
