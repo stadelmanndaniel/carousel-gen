@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { createClient } from "@supabase/supabase-js";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 
@@ -67,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     const subscriptionStatus = profileData.subscription_status;
     const trialEndsAt = profileData.trial_ends_at;
-    const GENERATION_LIMIT = 20;
+    const GENERATION_LIMIT = 30;
 
 
     // Deny access if the user's status is not 'active'
@@ -172,7 +171,8 @@ export async function POST(req: NextRequest) {
     const imageFolderPath = `${folderPath}images/`;
 
     // 🎯 STEP 1: Insert into projects table
-    const projectName = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+    // const projectName = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+    const projectName = generatedData.carousel_name || (prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt);
     const { error: projectInsertError } = await supabase.from('projects').insert([
         { id: project_id, name: projectName },
     ]);
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
     const updatedResult = [];
 
     // b) Process each slide: upload images & replace base64 with filenames
-    for (const slide of generatedData) {
+    for (const slide of generatedData.slides) {
       const updatedSlide: Record<string, any> = {};
 
       for (const [id, base64] of Object.entries(slide)) {

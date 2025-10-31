@@ -2,7 +2,7 @@ export interface CarouselStyle {
   id: string;
   name: string;
   description: string;
-  preview: string;
+  preview?: string;
   category: 'business' | 'meme' | 'educational' | 'lifestyle' | 'kalshi';
   colors: string[];
 }

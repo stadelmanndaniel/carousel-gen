@@ -13,79 +13,25 @@ interface StyleSelectorProps {
 
 export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorProps) {
   const { supabase } = useAuth();
-  const [carouselGenPreview, setCarouselGenPreview] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCarouselGenPreview = async () => {
-      try {
-        // Provided Supabase path: userId/projectId
-        const basePath = 'fef9961e-45b2-44f5-b769-d34f6405ca16/0d43d853-b45c-4067-b6c7-d3b78a28d948/';
+  const bucket_common_images = "common_images";
 
-        // 1) Try preview.png
-        const { data: previewSigned } = await (supabase as any)
-          .storage
-          .from('carousels')
-          .createSignedUrl(`${basePath}preview.png`, 3600);
+  function getPublicImageUrl(bucketName: string, filePath: string): string | null {
+    const { data } = supabase
+      .storage
+      .from(bucketName)
+      .getPublicUrl(filePath);
 
-        if (previewSigned?.signedUrl) {
-          setCarouselGenPreview(previewSigned.signedUrl);
-          return;
-        }
-
-        // 2) Try first image in slides/
-        const { data: slidesList, error: slidesErr } = await (supabase as any)
-          .storage
-          .from('carousels')
-          .list(`${basePath}slides/`, { limit: 100 });
-
-        if (!slidesErr) {
-          const firstImage = (slidesList ?? []).find((f: { name: string }) => /\.(png|jpg|jpeg)$/i.test(f.name));
-          if (firstImage) {
-            const { data: slidesSigned } = await (supabase as any)
-              .storage
-              .from('carousels')
-              .createSignedUrl(`${basePath}slides/${firstImage.name}`, 3600);
-            if (slidesSigned?.signedUrl) {
-              setCarouselGenPreview(slidesSigned.signedUrl);
-              return;
-            }
-          }
-        }
-
-        // 3) Try first image in images/
-        const { data: imagesList, error: imagesErr } = await (supabase as any)
-          .storage
-          .from('carousels')
-          .list(`${basePath}images/`, { limit: 100 });
-        if (!imagesErr) {
-          const firstImage = (imagesList ?? []).find((f: { name: string }) => /\.(png|jpg|jpeg)$/i.test(f.name));
-          if (firstImage) {
-            const { data: imagesSigned } = await (supabase as any)
-              .storage
-              .from('carousels')
-              .createSignedUrl(`${basePath}images/${firstImage.name}`, 3600);
-            if (imagesSigned?.signedUrl) {
-              setCarouselGenPreview(imagesSigned.signedUrl);
-              return;
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching carousel preview:', error);
-      }
-    };
-
-    fetchCarouselGenPreview();
-  }, [supabase]);
+    return data.publicUrl;
+  }
 
   // Create CarouselGen Style (always first)
   const carouselGenStyle: CarouselStyle = {
-    id: 'carouselgen-style',
-    name: 'CarouselGen Style',
+    id: 'template_1',
+    name: 'Catchy style',
     description: 'Our signature style with professional design and modern aesthetics',
-    preview: carouselGenPreview || '/images/default-preview.png',
     category: 'business',
-    colors: []
+    colors: ['#ea9b2f', '#F77737', '#E4405F', '#a53b3b'],
   };
 
   // Combine CarouselGen style with existing styles
@@ -118,15 +64,18 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {allStyles.map((style) => {
-              const isCarouselGenStyle = style.id === 'carouselgen-style';
+              const isCarouselGenStyle = style.id === 'template_1';
               const isExistingStyle = !isCarouselGenStyle;
-              const usePlaceholder = ['meme-style', 'educational', 'business', 'lifestyle'].includes(style.id);
+              const usePlaceholder = ['kalshi-style', 'meme-style', 'educational', 'business', 'lifestyle'].includes(style.id);
               const placeholderBg: Record<string, string> = {
-                'meme-style': '#F59E0B',
+                'kalshi-style': '#1A365D',
+                'meme-style': '#ec2424ff',
                 'educational': '#667EEA',
                 'business': '#2C3E50',
                 'lifestyle': '#FF9A9E',
               };
+
+              const url_preview = style.preview || getPublicImageUrl(bucket_common_images, `${style.id}.png`)|| 'cute.png';
               
               return (
                 <div
@@ -149,7 +98,7 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
                       </div>
                     ) : (
                       <img 
-                        src={style.preview} 
+                        src={url_preview} 
                         alt={`${style.name} preview`}
                         className="w-full h-full object-cover"
                       />

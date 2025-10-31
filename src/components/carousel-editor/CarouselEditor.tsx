@@ -334,7 +334,7 @@ export default function CarouselEditor({
 
             if (saveToDisk) {
                 // Option 1: Save to Supabase Storage (e.g., as 'preview_0.png', 'slide_1.png')
-                const base64Data = dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+                // const base64Data = dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
                 const blob = await fetch(dataURL).then(res => res.blob());
 
                 exportPromises.push(
@@ -532,11 +532,11 @@ export default function CarouselEditor({
                 onClick={() => handleSlideChange(idx)}
                 aria-current={activeSlide === idx ? 'page' : undefined}
                 className={`
-                  w-full text-left px-4 py-2.5 rounded-xl transition-all duration-200 
+                  w-full text-left px-3 py-2.5 rounded-xl transition-all duration-200 
                   flex items-center justify-between text-sm shadow-sm
                   ${activeSlide === idx
-                    ? 'bg-blue-600 text-white font-semibold transform scale-[1.02] ring-2 ring-blue-300'
-                    : 'bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium'
+                    ? 'gradient-instagram text-white font-semibold transform scale-[1.02] ring-2 ring-blue-300'
+                    : 'bg-gray-50 text-gray-700 hover:bg-orange-50 hover:text-purple-600 font-medium'
                   }
                 `}
               >
