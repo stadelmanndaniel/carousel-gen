@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Stage, Layer, Transformer, Rect } from "react-konva";
 import { Stage as KonvaStage } from 'konva/lib/Stage';
 import { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
-import { Loader2, AlertCircle, Save, Download, Eye, ChevronRight, Layout, Zap } from "lucide-react";
+import { Loader2, AlertCircle, Save, Download, Eye, Layout, Zap, Instagram } from "lucide-react";
+import InstagramPreviewModal from "./InstagramPreviewModal";
 import TextObject from "./objects/TextObject";
 import ImageObject from "./objects/ImageObject";
 import CircleObject from "./objects/CircleObject";
@@ -89,6 +90,9 @@ export default function CarouselEditor({
   const [error, setError] = useState<string | null>(null);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [initialPreviewGenerated, setInitialPreviewGenerated] = useState(false);
+  const [showInstagramPreview, setShowInstagramPreview] = useState(false);
+  const [instagramSlides, setInstagramSlides] = useState<string[] | null>(null);
+  const [isInstagramPreviewLoading, setIsInstagramPreviewLoading] = useState(false);
 
   const stageRef = useRef<KonvaStage | null>(null);
   const supabase = getSupabaseClient();
@@ -254,6 +258,48 @@ export default function CarouselEditor({
     } catch (err: any) {
         console.error(err);
         alert("❌ Failed to save project: " + err.message);
+    }
+  };
+
+  const openInstagramPreview = async () => {
+    setIsInstagramPreviewLoading(true);
+    try {
+      // Ensure latest slides are exported to Storage
+      await handleExportAllSlides(true);
+
+      // Fetch signed URLs for slides
+      const slidesPath = `${userId}/${projectId}/slides/`;
+      const { data: files, error: listErr } = await supabase.storage
+        .from("carousels")
+        .list(slidesPath, { limit: 200, offset: 0, sortBy: { column: "name", order: "asc" } });
+      if (listErr) throw listErr;
+
+      const slideNames = (files || [])
+        .filter(f => f.name.match(/^slide_\d+\.png$/))
+        .sort((a, b) => {
+          // Sort by number: slide_0.png, slide_1.png, etc.
+          const numA = parseInt(a.name.match(/slide_(\d+)\.png/)?.[1] || '0');
+          const numB = parseInt(b.name.match(/slide_(\d+)\.png/)?.[1] || '0');
+          return numA - numB;
+        })
+        .map(f => `${slidesPath}${f.name}`);
+
+      console.log('Found slides:', slideNames.length, slideNames);
+
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("carousels")
+        .createSignedUrls(slideNames, 60 * 60);
+      if (signErr) throw signErr;
+
+      const urls = signed.map(s => s.signedUrl);
+      console.log('Signed URLs:', urls.length, urls);
+      setInstagramSlides(urls);
+      setShowInstagramPreview(true);
+    } catch (e) {
+      console.error("Failed to open Instagram preview", e);
+      alert("Failed to open Instagram preview. Please try again.");
+    } finally {
+      setIsInstagramPreviewLoading(false);
     }
   };
 
@@ -446,12 +492,36 @@ export default function CarouselEditor({
   // --- Rendering ---
   
   return (
-    <div className="flex flex-col md:flex-row gap-4 mt-4">
-      {/* Slide Selector (Moved from Parent) */}
+    <div className="flex flex-col gap-4 mt-4">
+      {/* Top-right tools row under page header */}
+      <div className="w-full flex items-center justify-end">
+        <button
+          onClick={openInstagramPreview}
+          disabled={isInstagramPreviewLoading}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg shadow text-white ${
+            isInstagramPreviewLoading
+              ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90'
+          }`}
+        >
+          {isInstagramPreviewLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Preparing…</span>
+            </>
+          ) : (
+            <>
+              <Instagram className="w-4 h-4" />
+              <span>Instagram Preview</span>
+            </>
+          )}
+        </button>
+      </div>
 
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full md:w-64 order-2 md:order-1 flex flex-col border border-gray-100">
-          <label className="text-gray-800 font-bold mb-4 flex items-center">
-            <ChevronRight className="w-5 h-5 mr-2 text-blue-500"/> 
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Slide Selector (Moved from Parent) */}
+      <div className="bg-gray-50 p-4 rounded-lg border flex flex-col gap-4 w-full md:w-72 order-2 md:order-1">
+          <label className="font-semibold text-gray-700 mb-4">
             Slide Index
           </label>
           
@@ -470,7 +540,7 @@ export default function CarouselEditor({
                   }
                 `}
               >
-                <span>
+                <span className="whitespace-nowrap">
                   Slide {idx + 1}
                 </span>
               </button>
@@ -478,12 +548,12 @@ export default function CarouselEditor({
           </nav>
         </div>
       
-      {/* Left Panel (Properties) */}
-      <div
-        className="bg-gray-50 p-4 rounded-lg border flex flex-col gap-4 md:order-2 order-3"
-        id="properties-panel"
-        style={{ width: PROPERTIES_PANEL_WIDTH, minWidth: PROPERTIES_PANEL_WIDTH }}
-      >
+        {/* Left Panel (Properties) */}
+        <div
+          className="bg-gray-50 p-4 rounded-lg border flex flex-col gap-4 md:order-2 order-3"
+          id="properties-panel"
+          style={{ width: PROPERTIES_PANEL_WIDTH, minWidth: PROPERTIES_PANEL_WIDTH }}
+        >
         <h3 className="font-semibold text-gray-700">Properties</h3>
         {selectedObject ? (
           <>
@@ -630,11 +700,11 @@ export default function CarouselEditor({
         <div className="flex flex-col gap-2 mt-auto">
             <button
                 onClick={handleSaveProject}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded font-medium transition-colors hover:bg-green-700"
             >
-                💾 Save Project
+                <Save className="w-5 h-5" />
+                <span>Save Project</span>
             </button>
-            <div className="flex flex-col gap-2 mt-auto">
             <button
                 onClick={handleExportCurrentSlide}
                 className="flex items-center justify-center space-x-2 px-4 py-2 rounded font-medium transition-colors bg-blue-500 text-white hover:bg-blue-600"
@@ -655,7 +725,6 @@ export default function CarouselEditor({
                 <Download className="w-5 h-5" />
                 <span>Export All Slides (ZIP)</span>
             </button>
-        </div>
         </div>
       </div>
 
@@ -728,7 +797,8 @@ export default function CarouselEditor({
           </Layer>
         </Stage>
       </div>
-      
+      </div>
+
       {showReplaceModal && (
         <ReplaceImageModal
             images={imageList}
@@ -737,6 +807,13 @@ export default function CarouselEditor({
             onSelectImage={handleReplaceImage}
             onUploadComplete={handleUploadComplete}
             />
+      )}
+
+      {showInstagramPreview && instagramSlides && (
+        <InstagramPreviewModal
+          slides={instagramSlides}
+          onClose={() => setShowInstagramPreview(false)}
+        />
       )}
     </div>
   );
