@@ -2,21 +2,21 @@
 import React from "react";
 import { Rect } from "react-konva";
 
-interface SquareObjectProps {
+interface RectangleObjectProps {
   object: {
     id: string;
     x: number;
     y: number;
     width: number;
     height: number;
-    fill: string;
+    fill?: string;
   };
   isSelected?: boolean;
   onSelect?: () => void;
   onChange?: (newObj: any) => void;
 }
 
-const SquareObject: React.FC<SquareObjectProps> = ({ object, isSelected, onSelect, onChange }) => {
+const RectangleObject: React.FC<RectangleObjectProps> = ({ object, isSelected, onSelect, onChange }) => {
   return (
     <Rect
       id={object.id}
@@ -51,4 +51,4 @@ const SquareObject: React.FC<SquareObjectProps> = ({ object, isSelected, onSelec
   );
 };
 
-export default SquareObject;
+export default RectangleObject;
