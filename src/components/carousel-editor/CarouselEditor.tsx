@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Stage, Layer, Transformer, Rect } from "react-konva";
 import { Stage as KonvaStage } from 'konva/lib/Stage';
 import { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
-import { Loader2, AlertCircle, Save, Download, Eye } from "lucide-react";
+import { Loader2, AlertCircle, Save, Download, Eye, ChevronRight, Layout, Zap } from "lucide-react";
 import TextObject from "./objects/TextObject";
 import ImageObject from "./objects/ImageObject";
 import CircleObject from "./objects/CircleObject";
@@ -432,29 +432,47 @@ export default function CarouselEditor({
     );
   }
 
+  const handleSlideChange = (newIndex: number) => {
+    setActiveSlide(newIndex);
+    setSelectedId(null); // Important: Deselect when changing slides
+    console.log(`Switched to Slide ${newIndex + 1}. Element selection reset.`);
+  };
+
   
   // --- Rendering ---
   
   return (
     <div className="flex flex-col md:flex-row gap-4 mt-4">
       {/* Slide Selector (Moved from Parent) */}
-      <div className="bg-white rounded-2xl shadow p-6 mb-4 md:order-1 order-2 w-full md:w-auto">
-          <label className="text-gray-700 font-medium mr-2">Select Slide:</label>
-          <select
-            className="border border-gray-300 rounded-md p-2"
-            value={activeSlide}
-            onChange={(e) => {
-                setActiveSlide(Number(e.target.value));
-                setSelectedId(null); // Deselect when changing slides
-            }}
-          >
-            {fullStyle.layouts.map((_: any, idx: number) => (
-              <option key={idx} value={idx}>
-                Slide {idx + 1}
-              </option>
+
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full md:w-64 order-2 md:order-1 flex flex-col border border-gray-100">
+          <label className="text-gray-800 font-bold mb-4 flex items-center">
+            <ChevronRight className="w-5 h-5 mr-2 text-blue-500"/> 
+            Slide Index
+          </label>
+          
+          <nav className="flex flex-col space-y-3">
+            {fullStyle.layouts.map((slide, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSlideChange(idx)}
+                aria-current={activeSlide === idx ? 'page' : undefined}
+                className={`
+                  w-full text-left px-4 py-2.5 rounded-xl transition-all duration-200 
+                  flex items-center justify-between text-sm shadow-sm
+                  ${activeSlide === idx
+                    ? 'bg-blue-600 text-white font-semibold transform scale-[1.02] ring-2 ring-blue-300'
+                    : 'bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium'
+                  }
+                `}
+              >
+                <span>
+                  Slide {idx + 1}
+                </span>
+              </button>
             ))}
-          </select>
-      </div>
+          </nav>
+        </div>
       
       {/* Left Panel (Properties) */}
       <div
