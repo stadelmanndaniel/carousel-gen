@@ -148,14 +148,13 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
           const src = total > 0 ? previews[index % total] : undefined;
           return (
             <div 
-              className="aspect-[4/5] rounded-t-lg p-4 flex items-center justify-center overflow-hidden relative" 
-              style={{ backgroundColor: src ? 'transparent' : '#e5e7eb' }}
+              className="aspect-[3/4] rounded-t-lg flex items-center justify-center overflow-hidden relative bg-gradient-to-br from-gray-100 to-gray-200"
             >
               {src ? (
                 <img 
                   src={src} 
                   alt={`Preview for ${carousel.title}`}
-                  className="object-contain w-full h-full"
+                  className="object-cover w-full h-full"
                 />
               ) : (
                 <div className="text-center text-gray-500">
@@ -242,7 +241,7 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
               </div>
 
              {/* Carousel Info */}
-             <div className="px-4 pb-4">
+             <div className="px-4 pt-4 pb-4">
                 <h3 className="font-semibold text-gray-900 mb-2">{carousel.title}</h3>
                 {/* Prompt removed from dashboard card */}
                 

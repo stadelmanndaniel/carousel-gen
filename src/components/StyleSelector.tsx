@@ -1,8 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 import { CarouselStyle } from '@/types';
 import { carouselStyles } from '@/data/mockData';
+import { useAuth } from '@/hooks/useAuth';
 
 interface StyleSelectorProps {
   onStyleSelect: (style: CarouselStyle) => void;
@@ -10,6 +12,85 @@ interface StyleSelectorProps {
 }
 
 export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorProps) {
+  const { supabase } = useAuth();
+  const [carouselGenPreview, setCarouselGenPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCarouselGenPreview = async () => {
+      try {
+        // Provided Supabase path: userId/projectId
+        const basePath = 'fef9961e-45b2-44f5-b769-d34f6405ca16/0d43d853-b45c-4067-b6c7-d3b78a28d948/';
+
+        // 1) Try preview.png
+        const { data: previewSigned } = await (supabase as any)
+          .storage
+          .from('carousels')
+          .createSignedUrl(`${basePath}preview.png`, 3600);
+
+        if (previewSigned?.signedUrl) {
+          setCarouselGenPreview(previewSigned.signedUrl);
+          return;
+        }
+
+        // 2) Try first image in slides/
+        const { data: slidesList, error: slidesErr } = await (supabase as any)
+          .storage
+          .from('carousels')
+          .list(`${basePath}slides/`, { limit: 100 });
+
+        if (!slidesErr) {
+          const firstImage = (slidesList ?? []).find((f: { name: string }) => /\.(png|jpg|jpeg)$/i.test(f.name));
+          if (firstImage) {
+            const { data: slidesSigned } = await (supabase as any)
+              .storage
+              .from('carousels')
+              .createSignedUrl(`${basePath}slides/${firstImage.name}`, 3600);
+            if (slidesSigned?.signedUrl) {
+              setCarouselGenPreview(slidesSigned.signedUrl);
+              return;
+            }
+          }
+        }
+
+        // 3) Try first image in images/
+        const { data: imagesList, error: imagesErr } = await (supabase as any)
+          .storage
+          .from('carousels')
+          .list(`${basePath}images/`, { limit: 100 });
+        if (!imagesErr) {
+          const firstImage = (imagesList ?? []).find((f: { name: string }) => /\.(png|jpg|jpeg)$/i.test(f.name));
+          if (firstImage) {
+            const { data: imagesSigned } = await (supabase as any)
+              .storage
+              .from('carousels')
+              .createSignedUrl(`${basePath}images/${firstImage.name}`, 3600);
+            if (imagesSigned?.signedUrl) {
+              setCarouselGenPreview(imagesSigned.signedUrl);
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching carousel preview:', error);
+      }
+    };
+
+    fetchCarouselGenPreview();
+  }, [supabase]);
+
+  // Create CarouselGen Style (always first)
+  const carouselGenStyle: CarouselStyle = {
+    id: 'carouselgen-style',
+    name: 'CarouselGen Style',
+    description: 'Our signature style with professional design and modern aesthetics',
+    preview: carouselGenPreview || '/images/default-preview.png',
+    category: 'business',
+    colors: []
+  };
+
+  // Combine CarouselGen style with existing styles
+  const allStyles = [carouselGenStyle, ...carouselStyles];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Content */}
@@ -36,51 +117,74 @@ export default function StyleSelector({ onStyleSelect, onBack }: StyleSelectorPr
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {carouselStyles.map((style) => (
-              <div
-                key={style.id}
-                onClick={() => onStyleSelect(style)}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer transform hover:scale-105 border-2 border-transparent hover:border-purple-200"
-              >
-                {/* Preview Image */}
-                <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-xl overflow-hidden">
-                  <img 
-                    src={style.preview} 
-                    alt={`${style.name} preview`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Style Info */}
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {style.name}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {style.description}
-                  </p>
-                  
-                  {/* Color Palette */}
-                  <div className="flex space-x-2">
-                    {style.colors.map((color, index) => (
-                      <div
-                        key={index}
-                        className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                        style={{ backgroundColor: color }}
+            {allStyles.map((style) => {
+              const isCarouselGenStyle = style.id === 'carouselgen-style';
+              const isExistingStyle = !isCarouselGenStyle;
+              const usePlaceholder = ['meme-style', 'educational', 'business', 'lifestyle'].includes(style.id);
+              const placeholderBg: Record<string, string> = {
+                'meme-style': '#F59E0B',
+                'educational': '#667EEA',
+                'business': '#2C3E50',
+                'lifestyle': '#FF9A9E',
+              };
+              
+              return (
+                <div
+                  key={style.id}
+                  onClick={() => !isExistingStyle && onStyleSelect(style)}
+                  className={`bg-white rounded-xl shadow-lg transition-all duration-200 border-2 ${
+                    isExistingStyle 
+                      ? 'cursor-not-allowed opacity-75' 
+                      : 'cursor-pointer hover:shadow-xl transform hover:scale-105 border-transparent hover:border-purple-200'
+                  }`}
+                >
+                  {/* Preview Image */}
+                  <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-xl overflow-hidden">
+                    {usePlaceholder ? (
+                      <div 
+                        className="w-full h-full flex items-center justify-center"
+                        style={{ backgroundColor: placeholderBg[style.id] || '#e5e7eb' }}
+                      >
+                        <span className="text-white text-lg font-semibold">Coming Soon</span>
+                      </div>
+                    ) : (
+                      <img 
+                        src={style.preview} 
+                        alt={`${style.name} preview`}
+                        className="w-full h-full object-cover"
                       />
-                    ))}
+                    )}
+                  </div>
+
+                  {/* Style Info */}
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {style.name}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {style.description}
+                    </p>
+                  </div>
+
+                  {/* Select Button */}
+                  <div className="px-6 pb-6">
+                    {isExistingStyle ? (
+                      <button 
+                        disabled
+                        className="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center space-x-2"
+                      >
+                        <span>Coming Soon</span>
+                      </button>
+                    ) : (
+                      <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                        <span>Select Style</span>
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                {/* Select Button */}
-                <div className="px-6 pb-6">
-                  <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2">
-                    <span>Select Style</span>
-                    <Check className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Help Text */}
