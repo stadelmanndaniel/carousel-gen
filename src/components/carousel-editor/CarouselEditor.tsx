@@ -151,7 +151,25 @@ export default function CarouselEditor({
     };
     loadProjectData();
   }, [userId, projectId]);
+  
 
+  const handleGlobalDeselect = useCallback((e: MouseEvent) => {
+    if (stageRef.current) {
+      const targetNode = e.target as Node;
+      const konvaContainer = stageRef.current.container();
+      if (konvaContainer && konvaContainer.contains(targetNode)) {
+        return; 
+      }
+    }
+    setSelectedId(null);
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleGlobalDeselect);
+    return () => {
+      document.removeEventListener("mousedown", handleGlobalDeselect);
+    };
+  }, [handleGlobalDeselect]);
   
   // --- Derived State (Step 4: No sync problem) ---
   
@@ -413,6 +431,7 @@ export default function CarouselEditor({
       </div>
     );
   }
+
   
   // --- Rendering ---
   
