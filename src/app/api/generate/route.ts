@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 
 export async function POST(req: NextRequest) {
@@ -17,10 +18,28 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // Debug logging (without exposing secrets)
+    console.log("Environment check:", {
+      hasSupabaseUrl: !!SUPABASE_URL,
+      hasServiceRoleKey: !!SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrlLength: SUPABASE_URL?.length || 0,
+      serviceRoleKeyLength: SUPABASE_SERVICE_ROLE_KEY?.length || 0,
+    });
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      const missing = [];
+      if (!SUPABASE_URL) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+      if (!SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+      return NextResponse.json({ 
+        error: `Server configuration missing: ${missing.join(", ")} not set. Please check your .env.local file and restart the dev server.` 
+      }, { status: 500 });
+    }
+
+    // Prefer centralized helper which validates configuration
+    const supabase = getSupabaseServiceRoleClient();
     const authHeader = req.headers.get("authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
 
@@ -169,6 +188,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ project_id });
 
   } catch (e: any) {
-    return NextResponse.json({ error: e.message ?? "Internal error" }, { status: 500 });
+    console.error("/api/generate failed:", e);
+    return NextResponse.json({ error: e?.message ?? "Internal error" }, { status: 500 });
   }
 }
