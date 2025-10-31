@@ -157,8 +157,12 @@ export default function CarouselEditor({
     if (stageRef.current) {
       const targetNode = e.target as Node;
       const konvaContainer = stageRef.current.container();
+      const panel = document.getElementById("properties-panel");
       if (konvaContainer && konvaContainer.contains(targetNode)) {
         return; 
+      }
+      if (panel && panel.contains(targetNode)) {
+        return;
       }
     }
     setSelectedId(null);
@@ -477,6 +481,7 @@ export default function CarouselEditor({
       {/* Left Panel (Properties) */}
       <div
         className="bg-gray-50 p-4 rounded-lg border flex flex-col gap-4 md:order-2 order-3"
+        id="properties-panel"
         style={{ width: PROPERTIES_PANEL_WIDTH, minWidth: PROPERTIES_PANEL_WIDTH }}
       >
         <h3 className="font-semibold text-gray-700">Properties</h3>
@@ -546,7 +551,7 @@ export default function CarouselEditor({
             )
            } 
 
-            {["text", "rectangle"].includes(selectedObject.type) && (
+            {["text", "rectangle", "circle"].includes(selectedObject.type) && (
             <>
             <div className="flex gap-10">
             <label className="text-sm text-gray-600">Color:</label>
