@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     const subscriptionStatus = profileData.subscription_status;
     const trialEndsAt = profileData.trial_ends_at;
-    const GENERATION_LIMIT = 20;
+    const GENERATION_LIMIT = 30;
 
 
     // Deny access if the user's status is not 'active'

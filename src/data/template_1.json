@@ -5,7 +5,7 @@
       "scene": {
         "width": 1080,
         "height": 1350,
-        "background": "#FCAF45"
+        "background": "#ea9b2f"
       },
       "objects": [
         {
@@ -46,7 +46,7 @@
       "scene": {
         "width": 1080,
         "height": 1350,
-        "background": "#FCAF45"
+        "background": "#ea9b2f"
       },
       "objects": [
         {
@@ -182,7 +182,50 @@
             "fill": "#ffffff"
         }
       ]
+    },
+
+
+
+
+
+    {
+      "scene": {
+        "width": 1080,
+        "height": 1350,
+        "background": "#ea9b2f"
+      },
+      "objects": [
+        {
+            "id": "3_rectangle1",
+            "type": "rectangle",
+            "x": 0,
+            "y": 510,
+            "width": 1080,
+            "height": 40,
+            "fill": "#a53b3b"
+        },
+        {
+          "id": "3_image",
+          "type": "image",
+          "x": 180,
+          "y": 450,
+          "width": 720,
+          "height": 900
+        },
+        {
+          "id": "3_fact",
+          "type": "text",
+          "x": 80,
+          "y": 30,
+          "width": 920,
+          "height": 390,
+          "fontFamily": "Arial",
+          "fontSize": 56,
+          "fill": "#ffffff"
+        }
+      ]
     }
+
   ],
   "requests": [
     {
@@ -212,7 +255,6 @@
     {
       "local_context": "Slide 2: present key facts or figures that support the theme. Use real data but present statements that are captivating, if posible stunning and tuned for engagement with the content. It is divided into three parts, each with: one figure, the fact that corresponds to it, and an image that illustrates this figure.",
       "content": [
-
         {
           "id": "2_figure1",
           "type": "text",
@@ -262,6 +304,25 @@
           "instruction": "Create an image that visually represents the third figure. No text in the image."
         }
       ]
+    },
+
+    {
+        "local_context": "Slide 3: present a compelling conclusion that reinforces the theme. It should leave the viewer with a strong impression and a call to action or thought-provoking statement.",
+        "content": [
+          {
+            "id": "3_fact",
+            "type": "text",
+            "instruction": "Craft a powerful conclusion that encapsulates the theme. It should leave the viewer with a strong impression and a call to action or thought-provoking statement. Around 150-200 characters. Only use text, no markdown or special characters."
+          },
+          {
+            "id": "3_image",
+            "type": "image",
+            "aspect_ratio": "4:5",
+            "instruction": "Design an image that symbolizes the conclusion and leaves a lasting impression."
+          }
+        ]
     }
   ]
 }
+
+
