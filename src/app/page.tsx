@@ -67,7 +67,13 @@ function HomeContent() {
         body: JSON.stringify({ prompt: promptText, style_id: "blue-three-slides-style"}),
       });
 
-      if (!response.ok) throw new Error("Generation API failed");
+      if (!response.ok){
+        const errorData = await response.json();
+        if (errorData.message != null) {
+          throw new Error(errorData.message);
+        }
+        throw new Error("Generation API failed");
+      } 
 
       const { project_id } = await response.json();
 
