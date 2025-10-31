@@ -64,7 +64,7 @@ function HomeContent() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: promptText, style_id: "one-slide-test"}),
+        body: JSON.stringify({ prompt: promptText, style_id: "template_1" }),
       });
 
       if (!response.ok) {

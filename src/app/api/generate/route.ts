@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { createClient } from "@supabase/supabase-js";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 
@@ -201,7 +200,7 @@ export async function POST(req: NextRequest) {
     const updatedResult = [];
 
     // b) Process each slide: upload images & replace base64 with filenames
-    for (const slide of generatedData) {
+    for (const slide of generatedData.slides) {
       const updatedSlide: Record<string, any> = {};
 
       for (const [id, base64] of Object.entries(slide)) {
@@ -233,9 +232,13 @@ export async function POST(req: NextRequest) {
     }
 
     // c) Save result JSON (now referencing image paths instead of base64)
+    const result = {
+      carousel_name: generatedData.carousel_name,
+      slides: updatedResult
+    }
     await supabase.storage
       .from("carousels")
-      .upload(`${folderPath}result.json`, JSON.stringify(updatedResult, null, 2), {
+      .upload(`${folderPath}result.json`, JSON.stringify(result, null, 2), {
         contentType: "application/json",
       });
 
