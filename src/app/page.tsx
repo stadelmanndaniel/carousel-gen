@@ -64,7 +64,7 @@ function HomeContent() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: promptText, style_id: "blue-three-slides-style"}),
+        body: JSON.stringify({ prompt: promptText, style_id: "one-slide-test"}),
       });
 
       if (!response.ok) {
@@ -72,7 +72,7 @@ function HomeContent() {
         let message = "Generation API failed";
         try {
           const data = await response.json();
-          if (data?.error) message = data.error;
+          if (data?.message) message = data.message;
         } catch (_) {
           try {
             message = await response.text();

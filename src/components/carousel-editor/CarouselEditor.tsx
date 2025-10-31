@@ -4,9 +4,11 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Stage, Layer, Transformer, Rect } from "react-konva";
 import { Stage as KonvaStage } from 'konva/lib/Stage';
 import { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
-import { Loader2, AlertCircle, Save, Download, Eye } from "lucide-react";
+import { Loader2, AlertCircle, Save, Download, Eye, ChevronRight, Layout, Zap } from "lucide-react";
 import TextObject from "./objects/TextObject";
 import ImageObject from "./objects/ImageObject";
+import CircleObject from "./objects/CircleObject";
+import RectangleObject from "./objects/RectangleObject";
 import ReplaceImageModal from "./ReplaceImageModal";
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { saveJsonToSupabase } from "@/lib/supabase/saveProject";
@@ -20,9 +22,11 @@ interface LayoutObject {
   y: number;
   width: number;
   height: number;
+  fill?: string;
   fontFamily?: string; 
   imageUrl?: string; 
   imageFileName?: string;
+  radius?: number;
   [key: string]: any;
 }
 
@@ -147,7 +151,29 @@ export default function CarouselEditor({
     };
     loadProjectData();
   }, [userId, projectId]);
+  
 
+  const handleGlobalDeselect = useCallback((e: MouseEvent) => {
+    if (stageRef.current) {
+      const targetNode = e.target as Node;
+      const konvaContainer = stageRef.current.container();
+      const panel = document.getElementById("properties-panel");
+      if (konvaContainer && konvaContainer.contains(targetNode)) {
+        return; 
+      }
+      if (panel && panel.contains(targetNode)) {
+        return;
+      }
+    }
+    setSelectedId(null);
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleGlobalDeselect);
+    return () => {
+      document.removeEventListener("mousedown", handleGlobalDeselect);
+    };
+  }, [handleGlobalDeselect]);
   
   // --- Derived State (Step 4: No sync problem) ---
   
@@ -409,33 +435,53 @@ export default function CarouselEditor({
       </div>
     );
   }
+
+  const handleSlideChange = (newIndex: number) => {
+    setActiveSlide(newIndex);
+    setSelectedId(null); // Important: Deselect when changing slides
+    console.log(`Switched to Slide ${newIndex + 1}. Element selection reset.`);
+  };
+
   
   // --- Rendering ---
   
   return (
     <div className="flex flex-col md:flex-row gap-4 mt-4">
       {/* Slide Selector (Moved from Parent) */}
-      <div className="bg-white rounded-2xl shadow p-6 mb-4 md:order-1 order-2 w-full md:w-auto">
-          <label className="text-gray-700 font-medium mr-2">Select Slide:</label>
-          <select
-            className="border border-gray-300 rounded-md p-2"
-            value={activeSlide}
-            onChange={(e) => {
-                setActiveSlide(Number(e.target.value));
-                setSelectedId(null); // Deselect when changing slides
-            }}
-          >
-            {fullStyle.layouts.map((_: any, idx: number) => (
-              <option key={idx} value={idx}>
-                Slide {idx + 1}
-              </option>
+
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full md:w-64 order-2 md:order-1 flex flex-col border border-gray-100">
+          <label className="text-gray-800 font-bold mb-4 flex items-center">
+            <ChevronRight className="w-5 h-5 mr-2 text-blue-500"/> 
+            Slide Index
+          </label>
+          
+          <nav className="flex flex-col space-y-3">
+            {fullStyle.layouts.map((slide, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSlideChange(idx)}
+                aria-current={activeSlide === idx ? 'page' : undefined}
+                className={`
+                  w-full text-left px-4 py-2.5 rounded-xl transition-all duration-200 
+                  flex items-center justify-between text-sm shadow-sm
+                  ${activeSlide === idx
+                    ? 'bg-blue-600 text-white font-semibold transform scale-[1.02] ring-2 ring-blue-300'
+                    : 'bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium'
+                  }
+                `}
+              >
+                <span>
+                  Slide {idx + 1}
+                </span>
+              </button>
             ))}
-          </select>
-      </div>
+          </nav>
+        </div>
       
       {/* Left Panel (Properties) */}
       <div
         className="bg-gray-50 p-4 rounded-lg border flex flex-col gap-4 md:order-2 order-3"
+        id="properties-panel"
         style={{ width: PROPERTIES_PANEL_WIDTH, minWidth: PROPERTIES_PANEL_WIDTH }}
       >
         <h3 className="font-semibold text-gray-700">Properties</h3>
@@ -444,18 +490,82 @@ export default function CarouselEditor({
             {/* ... Inputs use currentObjects for state ... */}
             <p className="text-sm text-gray-600 font-medium">{selectedObject.id}</p>
 
-            <label className="text-sm text-gray-600">X:</label>
-            <input type="number" value={selectedObject.x} onChange={(e) => handleChange(selectedObject.id, { x: Number(e.target.value) })} className="border p-1 rounded" />
-            
-            <label className="text-sm text-gray-600">Y:</label>
-            <input type="number" value={selectedObject.y} onChange={(e) => handleChange(selectedObject.id, { y: Number(e.target.value) })} className="border p-1 rounded" />
-            
-            <label className="text-sm text-gray-600">Width:</label>
-            <input type="number" value={selectedObject.width || 0} onChange={(e) => handleChange(selectedObject.id, { width: Number(e.target.value) })} className="border p-1 rounded" />
-            
-            <label className="text-sm text-gray-600">Height:</label>
-            <input type="number" value={selectedObject.height || 0} onChange={(e) => handleChange(selectedObject.id, { height: Number(e.target.value) })} className="border p-1 rounded" />
+            <div className="flex gap-4">
+                <div className="flex flex-col">
+                    <label className="text-sm text-gray-600">X:</label>
+                    <input 
+                        type="number" 
+                        value={Math.round(selectedObject.x)} 
+                        onChange={(e) => handleChange(selectedObject.id, { x: Number(e.target.value) })} 
+                        // Constrain width and center text for numerical input
+                        className="border p-1 rounded w-20 text-center" 
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="text-sm text-gray-600">Y:</label>
+                    <input 
+                        type="number" 
+                        value={Math.round(selectedObject.y)} 
+                        onChange={(e) => handleChange(selectedObject.id, { y: Number(e.target.value) })} 
+                         // Constrain width and center text for numerical input
+                        className="border p-1 rounded w-20 text-center" 
+                    />
+                </div>
+            </div>
 
+            <div className="flex gap-4">
+                <div className="flex flex-col">
+                    <label className="text-sm text-gray-600">Width:</label>
+                    <input 
+                        type="number" 
+                        value={Math.round(selectedObject.width || 0)} 
+                        onChange={(e) => handleChange(selectedObject.id, { width: Number(e.target.value) })} 
+                        // Constrain width and center text for numerical input
+                        className="border p-1 rounded w-20 text-center" 
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label className="text-sm text-gray-600">Height:</label>
+                    <input 
+                        type="number" 
+                        value={Math.round(selectedObject.height || 0)} 
+                        onChange={(e) => handleChange(selectedObject.id, { height: Number(e.target.value) })} 
+                        // Constrain width and center text for numerical input
+                        className="border p-1 rounded w-20 text-center" 
+                    />
+                </div>
+            </div>
+
+           {
+            selectedObject.type === "circle" && (
+            <div className="flex gap-10">
+                <label className="text-sm text-gray-600">Radius:</label>
+                <input 
+                    type="number" 
+                    value={Math.round(selectedObject.radius || 0)} 
+                    onChange={(e) => handleChange(selectedObject.id, { radius: Number(e.target.value) })} 
+                    // Constrain width and center text for numerical input
+                    className="border p-1 rounded w-20 text-center" 
+                />
+            </div>
+            )
+           } 
+
+            {["text", "rectangle", "circle"].includes(selectedObject.type) && (
+            <>
+            <div className="flex gap-10">
+            <label className="text-sm text-gray-600">Color:</label>
+                <input
+                type="color"
+                value={selectedObject.fill || "#000000"}
+                onChange={(e) =>
+                    handleChange(selectedObject.id, { fill: e.target.value })
+                }
+                className="border p-1 rounded w-16 h-8"
+                />
+            </div>
+            </>
+            )}
 
             {selectedObject.type === "text" && (
             <>
@@ -470,31 +580,34 @@ export default function CarouselEditor({
                 className="border p-1 rounded w-full"
                 />
 
-                <label className="text-sm text-gray-600">Color:</label>
-                <input
-                type="color"
-                value={selectedObject.fill || "#000000"}
-                onChange={(e) =>
-                    handleChange(selectedObject.id, { fill: e.target.value })
-                }
-                className="border p-1 rounded w-16 h-8"
-                />
-
-                <label className="text-sm text-gray-600">Font Family:</label>
-                <select
-                    value={selectedObject.fontFamily || ""}
+                <div className="flex gap-10">
+                    <label className="text-sm text-gray-600">Font Size:</label>
+                    <input
+                    type="number"
+                    value={selectedObject.fontSize || 0}
                     onChange={(e) =>
-                        handleChange(selectedObject.id, { fontFamily: e.target.value })
+                        handleChange(selectedObject.id, { fontSize: Number(e.target.value) })
                     }
-                    className="border p-1 rounded w-full"
-                    style={{ fontFamily: selectedObject.fontFamily || "Arial" }}
-                >
-                    {AVAILABLE_FONTS.map((font) => (
-                        <option key={font.value} value={font.value}>
-                            {font.name}
-                        </option>
-                    ))}
-                </select>
+                    className="border p-1 rounded w-14 text-center"
+                    />
+                </div>
+                <div className="flex gap-10">
+                  <label className="text-sm text-gray-600">Font:</label>
+                  <select
+                      value={selectedObject.fontFamily || ""}
+                      onChange={(e) =>
+                          handleChange(selectedObject.id, { fontFamily: e.target.value })
+                      }
+                      className="border p-1 rounded w-full"
+                      style={{ fontFamily: selectedObject.fontFamily || "Arial" }}
+                  >
+                      {AVAILABLE_FONTS.map((font) => (
+                          <option key={font.value} value={font.value}>
+                              {font.name}
+                          </option>
+                      ))}
+                  </select>
+                </div>
                 
             </>
             )}
@@ -590,6 +703,10 @@ export default function CarouselEditor({
               switch (obj.type) {
                 case "text":
                   return <TextObject {...commonProps} />;
+                case "rectangle":
+                  return <RectangleObject {...commonProps} />;
+                case "circle":
+                  return <CircleObject {...commonProps} />;
                 case "image":
                 case "logo":
                   return (

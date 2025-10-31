@@ -8,6 +8,33 @@
         "background": "#002147"
       },
       "objects": [
+
+        {
+          "id": "1_rectangle1",
+          "type": "rectangle",
+          "x": 0,
+          "y": 0,
+          "width": 1080,
+          "height": 620,
+          "fill": "#640080"
+        },
+        {
+          "id": "1_rectangle2",
+          "type": "rectangle",
+          "x": 0,
+          "y": 620,
+          "width": 1080,
+          "height": 730,
+          "fill": "#1080ff"
+        },
+        {
+          "id": "1_circle1",
+          "type": "circle",
+          "x": 300,
+          "y": 820,
+          "radius": 40,
+          "fill": "#ff1080"
+        },
         {
           "id": "1_title",
           "type": "text",

@@ -53,6 +53,60 @@ export async function POST(req: NextRequest) {
     }
 
     const user_id = userRes.user.id;
+    // --- Subscription Check ---
+    const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_status, trial_ends_at')
+        .eq('id', user_id)
+        .single();
+    
+    if (profileError || !profileData) {
+        console.error("Profile fetch error:", profileError);
+        return NextResponse.json({ error: "Could not verify user profile." }, { status: 500 });
+    }
+
+    const subscriptionStatus = profileData.subscription_status;
+    const trialEndsAt = profileData.trial_ends_at;
+    const GENERATION_LIMIT = 20;
+
+
+    // Deny access if the user's status is not 'active'
+    if (subscriptionStatus !== 'active'){
+      console.log(`User ${user_id} subscription status: ${subscriptionStatus}`);
+       if (trialEndsAt) {
+        const trialEndDate = new Date(trialEndsAt);
+        const now = new Date();
+        if (trialEndDate > now) {
+          const { count, error: countError } = await supabase
+            .from('user_projects')
+            .select('project_id', { count: 'exact', head: true }) 
+            .eq('user_id', user_id);
+
+          if (countError) {
+              console.error("Project count fetch error:", countError);
+              return NextResponse.json({ error: "Could not retrieve user project count." }, { status: 500 });
+          }
+
+          const projectCount = count || 0;
+
+          console.log(`User ${user_id} has created ${projectCount} projects.`);
+          
+          // 2. Check if the generation limit is exceeded
+          if (projectCount >= GENERATION_LIMIT) {
+              // Deny access if limit is hit (403 Forbidden)
+              return NextResponse.json({
+                  error: "Generation limit reached",
+                  message: `Free users are limited to ${GENERATION_LIMIT} generations. Please subscribe to continue.`
+              }, { status: 403 });
+          }
+        }
+      } else {
+        return NextResponse.json({ 
+            error: "Subscription required", 
+            message: "You must have an active subscription to generate content and your trial period is expired."
+        }, { status: 403 });
+      }
+    }
 
     const body = await req.json().catch(() => ({}));
     const { prompt, style_id } = body ?? {};
