@@ -35,13 +35,8 @@ interface Layout {
   objects: LayoutObject[];
 }
 
-interface ResultSlide {
+interface Result {
   [key: string]: any;
-}
-
-interface FullResult {
-  carousel_name: string;
-  slides: ResultSlide[];
 }
 
 interface FullStyle {
@@ -83,7 +78,7 @@ export default function CarouselEditor({
   
   // ✅ 1. Project State (Holds ALL slides' data)
   const [fullStyle, setFullStyle] = useState<FullStyle | null>(null);
-  const [fullResult, setFullResult] = useState<FullResult | null>(null);
+  const [fullResult, setFullResult] = useState<Result[] | null>(null);
   const [imageList, setImageList] = useState<ImageAsset[]>([]);
   
   // ✅ 2. UI State
@@ -144,7 +139,7 @@ export default function CarouselEditor({
         
         // ✅ Set the entire project state
         setFullStyle(style as FullStyle);
-        setFullResult(result as FullResult);
+        setFullResult(result as Result[]);
         setImageList(imageAssets);
         
       } catch (e: any) {
@@ -187,7 +182,7 @@ export default function CarouselEditor({
   }, [fullStyle, activeSlide]);
 
   const currentResult = useMemo(() => {
-    return fullResult?.slides?.[activeSlide];
+    return fullResult?.[activeSlide];
   }, [fullResult, activeSlide]);
   
   const currentObjects = currentLayout?.objects || [];

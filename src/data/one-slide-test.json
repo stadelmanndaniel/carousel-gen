@@ -10,69 +10,48 @@
       "objects": [
 
         {
-          "id": "1_rectangle1",
+          "id": "2_rectangle1",
           "type": "rectangle",
-          "x": 0,
+          "x": 360,
           "y": 0,
-          "width": 1080,
-          "height": 620,
-          "fill": "#640080"
+          "width": 360,
+          "height": 1350,
+          "fill": "#F77737"
         },
         {
-          "id": "1_rectangle2",
+          "id": "2_rectangle2",
           "type": "rectangle",
-          "x": 0,
-          "y": 620,
-          "width": 1080,
-          "height": 730,
-          "fill": "#1080ff"
+          "x": 720,
+          "y": 0,
+          "width": 360,
+          "height": 1350,
+          "fill": "#E4405F"
         },
         {
-          "id": "1_circle1",
-          "type": "circle",
-          "x": 300,
-          "y": 820,
-          "radius": 40,
-          "fill": "#ff1080"
-        },
-        {
-          "id": "1_title",
-          "type": "text",
-          "x": 80,
-          "y": 80,
-          "width": 800,
-          "height": 200,
-          "fontFamily": "Arial",
-          "fontSize": 48,
-          "fill": "#FFFFFF"
-        },
-        {
-          "id": "1_subtitle",
-          "type": "text",
-          "x": 80,
-          "y": 160,
-          "width": 800,
-          "height": 200,
-          "fontFamily": "Arial",
-          "fontSize": 32,
-          "fill": "#CCCCCC"
-        },
-        {
-          "id": "1_image",
+          "id": "2_image1",
           "type": "image",
-          "x": 100,
-          "y": 280,
-          "width": 880,
-          "height": 500
+          "x": 0,
+          "y": 360,
+          "width": 360,
+          "height": 630
         },
         {
-          "id": "1_logo",
-          "type": "logo",
-          "x": 930,
-          "y": 1150,
-          "width": 100,
-          "height": 100
-        }
+          "id": "2_image2",
+          "type": "image",
+          "x": 360,
+          "y": 360,
+          "width": 360,
+          "height": 630
+        },
+        {
+          "id": "2_image3",
+          "type": "image",
+          "x": 720,
+          "y": 360,
+          "width": 360,
+          "height": 630
+        },
+        
       ]
     }
   ],

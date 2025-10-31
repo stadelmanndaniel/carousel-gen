@@ -171,7 +171,8 @@ export async function POST(req: NextRequest) {
     const imageFolderPath = `${folderPath}images/`;
 
     // 🎯 STEP 1: Insert into projects table
-    const projectName = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+    // const projectName = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+    const projectName = generatedData.carousel_name || (prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt);
     const { error: projectInsertError } = await supabase.from('projects').insert([
         { id: project_id, name: projectName },
     ]);
@@ -232,13 +233,9 @@ export async function POST(req: NextRequest) {
     }
 
     // c) Save result JSON (now referencing image paths instead of base64)
-    const result = {
-      carousel_name: generatedData.carousel_name,
-      slides: updatedResult
-    }
     await supabase.storage
       .from("carousels")
-      .upload(`${folderPath}result.json`, JSON.stringify(result, null, 2), {
+      .upload(`${folderPath}result.json`, JSON.stringify(updatedResult, null, 2), {
         contentType: "application/json",
       });
 

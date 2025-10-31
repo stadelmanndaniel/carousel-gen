@@ -5,73 +5,181 @@
       "scene": {
         "width": 1080,
         "height": 1350,
-        "background": "#002147"
+        "background": "#FCAF45"
       },
       "objects": [
-
         {
-          "id": "1_rectangle1",
-          "type": "rectangle",
+          "id": "1_image",
+          "type": "image",
           "x": 0,
           "y": 0,
           "width": 1080,
-          "height": 620,
-          "fill": "#640080"
-        },
-        {
-          "id": "1_rectangle2",
-          "type": "rectangle",
-          "x": 0,
-          "y": 620,
-          "width": 1080,
-          "height": 730,
-          "fill": "#1080ff"
-        },
-        {
-          "id": "1_circle1",
-          "type": "circle",
-          "x": 300,
-          "y": 820,
-          "radius": 40,
-          "fill": "#ff1080"
+          "height": 617
         },
         {
           "id": "1_title",
           "type": "text",
-          "x": 80,
-          "y": 80,
+          "x": 140,
+          "y": 680,
           "width": 800,
           "height": 200,
           "fontFamily": "Arial",
-          "fontSize": 48,
-          "fill": "#FFFFFF"
+          "fontSize": 72,
+          "fill": "#ffefcc"
         },
         {
           "id": "1_subtitle",
           "type": "text",
-          "x": 80,
-          "y": 160,
+          "x": 140,
+          "y": 860,
           "width": 800,
-          "height": 200,
+          "height": 426,
           "fontFamily": "Arial",
-          "fontSize": 32,
-          "fill": "#CCCCCC"
+          "fontSize": 56,
+          "fill": "#6b3900"
+        }
+      ]
+    },
+
+
+    {
+      "scene": {
+        "width": 1080,
+        "height": 1350,
+        "background": "#FCAF45"
+      },
+      "objects": [
+        {
+          "id": "2_rectangle1",
+          "type": "rectangle",
+          "x": 360,
+          "y": 0,
+          "width": 360,
+          "height": 1350,
+          "fill": "#F77737"
         },
         {
-          "id": "1_image",
+          "id": "2_rectangle2",
+          "type": "rectangle",
+          "x": 720,
+          "y": 0,
+          "width": 360,
+          "height": 1350,
+          "fill": "#E4405F"
+        },
+        {
+          "id": "2_image1",
           "type": "image",
-          "x": 100,
-          "y": 280,
-          "width": 880,
-          "height": 500
+          "x": 0,
+          "y": 360,
+          "width": 360,
+          "height": 630
         },
         {
-          "id": "1_logo",
-          "type": "logo",
-          "x": 930,
-          "y": 1150,
-          "width": 100,
-          "height": 100
+          "id": "2_image2",
+          "type": "image",
+          "x": 360,
+          "y": 360,
+          "width": 360,
+          "height": 630
+        },
+        {
+          "id": "2_image3",
+          "type": "image",
+          "x": 720,
+          "y": 360,
+          "width": 360,
+          "height": 630
+        },
+        {
+            "id": "2_circle1",
+            "type": "circle",
+            "x": 180,
+            "y": 180,
+            "radius": 80,
+            "fill": "#833AB4"
+        },
+        {
+            "id": "2_circle2",
+            "type": "circle",
+            "x": 540,
+            "y": 180,
+            "radius": 80,
+            "fill": "#833AB4"
+        },
+        {
+            "id": "2_circle3",
+            "type": "circle",
+            "x": 900,
+            "y": 180,
+            "radius": 80,
+            "fill": "#833AB4"
+        },
+        {
+            "id": "2_figure1",
+            "type": "text",
+            "x": 120,
+            "y": 150,
+            "width": 130,
+            "height": 110,
+            "fontFamily": "Arial",
+            "fontSize": 48,
+            "fill": "#ffffff"
+        },
+        {
+            "id": "2_figure2",
+            "type": "text",
+            "x": 480,
+            "y": 150,
+            "width": 130,
+            "height": 110,
+            "fontFamily": "Arial",
+            "fontSize": 48,
+            "fill": "#ffffff"
+        },
+        {
+            "id": "2_figure3",
+            "type": "text",
+            "x": 840,
+            "y": 150,
+            "width": 130,
+            "height": 110,
+            "fontFamily": "Arial",
+            "fontSize": 48,
+            "fill": "#ffffff"
+        },
+        {
+            "id": "2_text1",
+            "type": "text",
+            "x": 20,
+            "y": 1020,
+            "width": 320,
+            "height": 320,
+            "fontFamily": "Arial",
+            "fontSize": 32,
+            "fill": "#ffffff"
+        },
+        {
+            "id": "2_text2",
+            "type": "text",
+            "x": 380,
+            "y": 1020,
+            "width": 320,
+            "height": 320,
+            "fontFamily": "Arial",
+            "fontSize": 32,
+            "fill": "#ffffff"
+        },
+        {
+            "id": "2_text3",
+            "type": "text",
+            "x": 740,
+            "y": 1020,
+            "width": 320,
+            "height": 320,
+            "fontFamily": "Arial",
+            "fontSize": 32,
+            "fill": "#ffffff"
         }
       ]
     }
@@ -83,18 +191,75 @@
         {
           "id": "1_title",
           "type": "text",
-          "instruction": "Write a bold, attention-grabbing title introducing the theme."
+          "instruction": "Write a bold, attention-grabbing title introducing the theme. Only use text, no markdown or special characters. 30-50 characters."
         },
         {
           "id": "1_subtitle",
           "type": "text",
-          "instruction": "Add a short supporting subtitle explaining why this topic matters."
+          "instruction": "Add a short supporting subtitle explaining why this topic matters. Around 100 characters. Only use text, no markdown or special characters."
         },
         {
           "id": "1_image",
           "type": "image",
           "aspect_ratio": "16:9",
-          "instruction": "Create an image that visually represents the concept being introduced."
+          "instruction": "Create an image that visually represents the concept being introduced. Make it particularly attention-grabbing, people need to be willing to know more about it. No text in the image."
+        }
+      ]
+    },
+
+
+
+    {
+      "local_context": "Slide 2: present key facts or figures that support the theme. Use real data but present statements that are captivating, if posible stunning and tuned for engagement with the content. It is divided into three parts, each with: one figure, the fact that corresponds to it, and an image that illustrates this figure.",
+      "content": [
+
+        {
+          "id": "2_figure1",
+          "type": "text",
+          "instruction": "Present a first key figure. Only put a number or percentage, no text except if it's a unit like M or kg."
+        },
+        {
+          "id": "2_text1",
+          "type": "text",
+          "instruction": "Add a short description or context for the first figure, which starts with something similar to \"That's the amount of\" or \"This is the number of...\"."
+        },
+        {
+          "id": "2_image1",
+          "type": "image",
+          "aspect_ratio": "9:16",
+          "instruction": "Create an image that visually represents the first figure. No text in the image, compelling."
+        },
+        {
+          "id": "2_figure2",
+          "type": "text",
+          "instruction": "Present a second key figure. Only put a number or percentage, no text except if it's a unit like M or kg."
+        },
+        {
+          "id": "2_text2",
+          "type": "text",
+          "instruction": "Add a short description or context for the second figure, which starts with something similar to \"Did you know that\" to introduce the figure."
+        },
+        {
+          "id": "2_image2",
+          "type": "image",
+          "aspect_ratio": "9:16",
+          "instruction": "Create an image that visually represents the second figure. No text in the image."
+        },
+        {
+          "id": "2_figure3",
+          "type": "text",
+          "instruction": "Present a third key figure. Only put a number or percentage, no text except if it's a unit like M or kg."
+        },
+        {
+          "id": "2_text3",
+          "type": "text",
+          "instruction": "Add a short description or context for the third figure, which starts with something similar to \"No, it's not [insert common misconception or funny/absurd analogy]. It's... [real description]\". For instance, if the figure is \"5 million\", you could say \"No, it's not the number of calories in your favorite snack.\""
+        },
+        {
+          "id": "2_image3",
+          "type": "image",
+          "aspect_ratio": "9:16",
+          "instruction": "Create an image that visually represents the third figure. No text in the image."
         }
       ]
     }
