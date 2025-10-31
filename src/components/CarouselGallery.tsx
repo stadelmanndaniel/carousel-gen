@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Calendar, Eye, Edit, Download, Trash2, MoreVertical, Save } from 'lucide-react';
+import { Plus, Calendar, Eye, Edit, Download, Trash2, MoreVertical, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface DashboardProject {
@@ -9,6 +9,7 @@ interface DashboardProject {
   title: string;   
   createdAt: Date; 
   previewUrl?: string; // 🌟 NEW: Optional field for the signed URL
+  previewUrls?: string[]; // 🌟 Optional: multiple signed URLs for slide previews
   // Add other necessary fields if they existed in the full type but are needed here, like 'prompt'.
   // We'll assume for simplicity that 'prompt' is NOT available in the lightweight fetch.
 }
@@ -24,6 +25,31 @@ interface CarouselGalleryProps {
 export default function CarouselGallery({ carousels, loading, onCarouselSelect, onNewCarousel, currentUserId }: CarouselGalleryProps) {
   const [selectedCarousel, setSelectedCarousel] = useState<DashboardProject | null>(null);
   const [showActions, setShowActions] = useState<string | null>(null);
+  const [currentPreviewIndexById, setCurrentPreviewIndexById] = useState<Record<string, number>>({});
+
+  const getPreviewList = (carousel: DashboardProject): string[] => {
+    if (carousel.previewUrls && carousel.previewUrls.length > 0) return carousel.previewUrls;
+    if (carousel.previewUrl) return [carousel.previewUrl];
+    return [];
+  };
+
+  const goPrev = (carouselId: string, total: number) => {
+    if (total <= 1) return;
+    setCurrentPreviewIndexById((prev) => {
+      const current = prev[carouselId] ?? 0;
+      const next = (current - 1 + total) % total;
+      return { ...prev, [carouselId]: next };
+    });
+  };
+
+  const goNext = (carouselId: string, total: number) => {
+    if (total <= 1) return;
+    setCurrentPreviewIndexById((prev) => {
+      const current = prev[carouselId] ?? 0;
+      const next = (current + 1) % total;
+      return { ...prev, [carouselId]: next };
+    });
+  };
 
   const handleDownloadZip = async (carousel: DashboardProject) => {
       try {
@@ -115,25 +141,50 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
     >
       {/* Carousel Preview */}
       <div className="relative">
-        <div 
-          // Use the URL if available, otherwise fall back to a placeholder
-          className="h-48 rounded-t-lg p-4 flex items-center justify-center overflow-hidden" 
-          style={{ backgroundColor: carousel.previewUrl ? 'transparent' : '#e5e7eb' }} // Use light gray if no image
-        >
-          {carousel.previewUrl ? (
-            // 🌟 Use the signed URL as the image source
-            <img 
-              src={carousel.previewUrl} 
-              alt={`Preview for ${carousel.title}`}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <div className="text-center text-gray-500">
-              <Eye className="w-8 h-8 mx-auto mb-2" />
-              <div className="text-sm">No Preview Available</div>
+        {(() => {
+          const previews = getPreviewList(carousel);
+          const total = previews.length;
+          const index = currentPreviewIndexById[carousel.id] ?? 0;
+          const src = total > 0 ? previews[index % total] : undefined;
+          return (
+            <div 
+              className="aspect-[4/5] rounded-t-lg p-4 flex items-center justify-center overflow-hidden relative" 
+              style={{ backgroundColor: src ? 'transparent' : '#e5e7eb' }}
+            >
+              {src ? (
+                <img 
+                  src={src} 
+                  alt={`Preview for ${carousel.title}`}
+                  className="object-contain w-full h-full"
+                />
+              ) : (
+                <div className="text-center text-gray-500">
+                  <Eye className="w-8 h-8 mx-auto mb-2" />
+                  <div className="text-sm">No Preview Available</div>
+                </div>
+              )}
+
+              {total > 1 && (
+                <div className="absolute inset-0 flex items-center justify-between px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    aria-label="Previous preview"
+                    onClick={(e) => { e.stopPropagation(); goPrev(carousel.id, total); }}
+                    className="p-2 bg-white/80 hover:bg-white rounded-full shadow border"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-700" />
+                  </button>
+                  <button
+                    aria-label="Next preview"
+                    onClick={(e) => { e.stopPropagation(); goNext(carousel.id, total); }}
+                    className="p-2 bg-white/80 hover:bg-white rounded-full shadow border"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-700" />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
                 
                 {/* Actions Menu */}
                 <div className="absolute top-2 right-2">
@@ -191,10 +242,9 @@ export default function CarouselGallery({ carousels, loading, onCarouselSelect, 
               </div>
 
              {/* Carousel Info */}
-              <div className="p-4">
+             <div className="px-4 pb-4">
                 <h3 className="font-semibold text-gray-900 mb-2">{carousel.title}</h3>
-                {/* ❌ REMOVED: <p className="text-sm text-gray-600 mb-3 line-clamp-2">{carousel.prompt}</p> */}
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">Prompt data not available</p>
+                {/* Prompt removed from dashboard card */}
                 
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <div className="flex items-center space-x-1">

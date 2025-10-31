@@ -24,6 +24,8 @@ export type DashboardProject = {
   id: string;
   title: string;  
   createdAt: Date; 
+  previewUrl?: string;
+  previewUrls?: string[]; // first N slide image URLs (signed)
 };
 
 export async function getUserCarousels(userId: string): Promise<Carousel[]> {
@@ -279,17 +281,46 @@ export async function fetchDashboardProjects(userId: string): Promise<DashboardP
       if (!projectData) return null;
 
       const basePath = `${userId}/${item.project_id}/`;
+      const slidesPath = `${basePath}slides/`;
 
       // Await is now inside the async map callback, which returns a promise
       const { data: signedUrlData } = await supabase.storage
         .from('carousels')
-        .createSignedUrl(`${basePath}preview.png`, 60); // 60 seconds validity
+        .createSignedUrl(`${basePath}preview.png`, 3600); // 1 hour validity
+      
+      // List final slide renders and create signed URLs for the first 5
+      let previewUrls: string[] | undefined = undefined;
+      try {
+        const { data: list, error: listErr } = await supabase.storage
+          .from('carousels')
+          .list(slidesPath, { limit: 100 });
+        if (listErr) throw listErr;
+
+        const imageFiles = (list ?? [])
+          .filter(f => f.name.match(/\.(png|jpg|jpeg)$/i))
+          .slice(0, 5)
+          .map(f => `${slidesPath}${f.name}`);
+
+        if (imageFiles.length > 0) {
+          const { data: signedList, error: signErr } = await supabase.storage
+            .from('carousels')
+            .createSignedUrls(imageFiles, 3600);
+          if (signErr) throw signErr;
+          previewUrls = signedList
+            .map(s => s.signedUrl)
+            .filter((u): u is string => Boolean(u));
+        }
+      } catch (e) {
+        // Non-fatal for dashboard; fall back to single preview
+        previewUrls = undefined;
+      }
       
       return {
           id: projectData.id,
           title: projectData.name, // The project name is the title
           createdAt: new Date(projectData.created_at),
           previewUrl: signedUrlData?.signedUrl || undefined,
+          previewUrls,
       } as DashboardProject;
   });
 
