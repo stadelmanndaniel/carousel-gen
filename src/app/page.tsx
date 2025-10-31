@@ -67,7 +67,19 @@ function HomeContent() {
         body: JSON.stringify({ prompt: promptText, style_id: "blue-three-slides-style"}),
       });
 
-      if (!response.ok) throw new Error("Generation API failed");
+      if (!response.ok) {
+        // Try to surface server error details
+        let message = "Generation API failed";
+        try {
+          const data = await response.json();
+          if (data?.error) message = data.error;
+        } catch (_) {
+          try {
+            message = await response.text();
+          } catch (_) {}
+        }
+        throw new Error(message);
+      }
 
       const { project_id } = await response.json();
 
